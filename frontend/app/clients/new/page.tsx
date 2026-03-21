@@ -1,0 +1,165 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase"
+
+export default function NewClient() {
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [name, setName] = useState("")
+  const [phone, setPhone] = useState("")
+  const [email, setEmail] = useState("")
+  const [skinType, setSkinType] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // 📞 FORMATO EN VIVO
+  const formatPhoneInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10)
+
+    const part1 = digits.slice(0, 3)
+    const part2 = digits.slice(3, 6)
+    const part3 = digits.slice(6, 10)
+
+    if (digits.length <= 3) return part1
+    if (digits.length <= 6) return `(${part1}) ${part2}`
+
+    return `(${part1}) ${part2}-${part3}`
+  }
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      const { data: userData } = await supabase.auth.getUser()
+
+      if (!userData.user) {
+        router.push("/login")
+        return
+      }
+
+      // ✅ LIMPIAR TELÉFONO (solo números para BD)
+      const cleanPhone = phone.replace(/\D/g, "")
+
+      const { data, error } = await supabase
+        .from("clients")
+        .insert([
+          {
+            name,
+            phone: cleanPhone,
+            email: email || null,
+            skin_type: skinType || null,
+            user_id: userData.user.id,
+          },
+        ])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      router.push(`/clients/${data.id}`)
+
+    } catch (err: any) {
+      console.error(err)
+      setError("Error creando el cliente")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-xl shadow-md w-full max-w-md"
+      >
+        <h1 className="text-2xl font-bold mb-6">
+          Nuevo cliente
+        </h1>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {/* Nombre */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Nombre</label>
+          <input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Teléfono */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Teléfono</label>
+          <input
+            type="text"
+            required
+            value={phone}
+            onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+            placeholder="(000) 000-0000"
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Email */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Email (opcional)</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Tipo de piel */}
+        <div className="mb-6">
+          <label className="block text-sm mb-1">Tipo de piel</label>
+
+          <select
+            value={skinType}
+            onChange={(e) => setSkinType(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          >
+            <option value="">Seleccionar</option>
+            <option value="Seca">Seca</option>
+            <option value="Grasa">Grasa</option>
+            <option value="Mixta">Mixta</option>
+            <option value="Sensible">Sensible</option>
+          </select>
+        </div>
+
+        {/* Botones */}
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 bg-pink-500 text-white py-2 rounded-lg"
+          >
+            {loading ? "Guardando..." : "Guardar cliente"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="flex-1 border border-gray-300 py-2 rounded-lg"
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
