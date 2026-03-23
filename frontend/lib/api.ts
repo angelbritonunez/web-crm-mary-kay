@@ -1,19 +1,36 @@
+import { createClient as createSupabaseClient } from "@/lib/supabase"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
-// 🔥 TEMPORAL MVP (luego esto vendrá de auth)
-const USER_ID = "0134935d-be82-4cc1-ae75-c6b010db0bc6"
+// Helper para obtener el usuario autenticado
+const getUserId = async () => {
+  const supabase = createSupabaseClient()
 
-// 🔹 CLIENTS
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    throw new Error("Usuario no autenticado")
+  }
+
+  return user.id
+}
+
+// CLIENTS
 export const createClient = async (data: {
   name: string
   phone: string
   skin_type: string
 }) => {
+  const userId = await getUserId()
+
   const res = await fetch(`${API_URL}/clients`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-user-id": USER_ID, // 🔥 NUEVO
+      "x-user-id": userId,
     },
     body: JSON.stringify(data),
   })
@@ -23,7 +40,7 @@ export const createClient = async (data: {
   return res.json()
 }
 
-// 🔹 SALES
+// SALES
 export const createSale = async (data: {
   client_id: string
   total: number
@@ -35,11 +52,13 @@ export const createSale = async (data: {
     price: number
   }[]
 }) => {
+  const userId = await getUserId()
+
   const res = await fetch(`${API_URL}/sales`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-user-id": USER_ID, // 🔥 FIX AQUÍ
+      "x-user-id": userId,
     },
     body: JSON.stringify(data),
   })
@@ -53,15 +72,54 @@ export const createSale = async (data: {
   return res.json()
 }
 
-// 🔹 GET CLIENTS
+// GET CLIENTS
 export const getClients = async () => {
+  const userId = await getUserId()
+
   const res = await fetch(`${API_URL}/test-db`, {
     headers: {
-      "x-user-id": USER_ID, // opcional pero consistente
+      "x-user-id": userId,
     },
   })
 
   if (!res.ok) throw new Error("Error obteniendo clientes")
+
+  return res.json()
+}
+
+// FOLLOWUPS
+export const getFollowups = async () => {
+  const userId = await getUserId()
+
+  const res = await fetch(`${API_URL}/followups`, {
+    headers: {
+      "x-user-id": userId,
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.json()
+    console.error("Error backend followups:", error)
+    throw new Error("Error obteniendo followups")
+  }
+
+  return res.json()
+}
+
+// COMPLETE FOLLOWUP
+export const completeFollowup = async (id: string) => {
+  const userId = await getUserId()
+
+  const res = await fetch(`${API_URL}/followups/${id}/complete`, {
+    method: "POST",
+    headers: {
+      "x-user-id": userId,
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error("Error completando followup")
+  }
 
   return res.json()
 }
