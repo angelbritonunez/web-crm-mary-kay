@@ -15,9 +15,8 @@ export default function NewSaleContent() {
   const [products, setProducts] = useState<any[]>([])
   const [selectedProducts, setSelectedProducts] = useState<any[]>([])
   const [clientId, setClientId] = useState(clientIdFromURL || "")
-  
-  const [paymentType, setPaymentType] = useState("efectivo") // ✅ FIX
 
+  const [paymentType, setPaymentType] = useState("efectivo")
   const [discount, setDiscount] = useState<number | "">("")
 
   const [search, setSearch] = useState("")
@@ -94,7 +93,12 @@ export default function NewSaleContent() {
   )
 
   const discountValue = Number(discount) || 0
-  const total = subtotal - (subtotal * discountValue) / 100
+
+  // ✅ FIX TOTAL (nunca negativo)
+  const total = Math.max(
+    0,
+    subtotal - (subtotal * discountValue) / 100
+  )
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
@@ -120,15 +124,13 @@ export default function NewSaleContent() {
         })),
       }
 
-      console.log("Payload enviado:", payload)
-
       await createSale(payload)
 
       router.push(`/clients/${clientId}`)
 
     } catch (err: any) {
-      console.error("ERROR REAL:", err)
-      setError("Error registrando la venta. Ver consola.")
+      console.error(err)
+      setError("Error registrando la venta.")
     } finally {
       setLoading(false)
     }
@@ -146,31 +148,36 @@ export default function NewSaleContent() {
         <div className="mb-4 text-sm text-red-500">{error}</div>
       )}
 
-      <input
-        placeholder="Buscar productos..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full mb-4 px-4 py-2 rounded-full border text-sm"
-      />
-
-      {/* 🔥 SELECTOR DE PAGO (LO QUE TE FALTABA) */}
-      <div className="mb-6">
-        <label className="text-sm font-medium">Tipo de pago</label>
-        <select
-          value={paymentType}
-          onChange={(e) => setPaymentType(e.target.value)}
-          className="w-full border px-3 py-2 rounded-lg mt-1"
-        >
-          <option value="efectivo">Efectivo</option>
-          <option value="transferencia">Transferencia</option>
-          <option value="tarjeta">Tarjeta</option>
-        </select>
+      <div className="relative mb-6">
+        <input
+          placeholder="Buscar productos..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-10 pr-4 py-3 rounded-full border bg-white text-sm shadow-sm focus:outline-none"
+        />
+        <span className="absolute left-4 top-3 text-gray-400">🔍</span>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
+        {["Todos", "skincare", "makeup"].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategory(cat)}
+            className={`px-4 py-2 rounded-full text-sm border ${
+              category === cat
+                ? "bg-[#E75480] text-white border-[#E75480]"
+                : "bg-white text-gray-600"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
 
-        <div className="md:col-span-2">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-12 gap-8">
+
+        <div className="col-span-8">
+          <div className="grid grid-cols-3 gap-5">
 
             {filteredProducts.map((p) => {
               const selected = isSelected(p.id)
@@ -180,13 +187,18 @@ export default function NewSaleContent() {
                 <div
                   key={p.id}
                   onClick={() => addProduct(p)}
-                  className={`p-5 rounded-2xl border transition cursor-pointer
-                  ${selected
-                      ? "border-[#E75480] bg-pink-50 shadow-md"
+                  className={`p-5 rounded-2xl border transition cursor-pointer ${
+                    selected
+                      ? "border-[#E75480] bg-[#FDE7EF]"
                       : "bg-white hover:shadow-sm"
-                    }`}
+                  }`}
                 >
-                  <p className="font-semibold text-sm mt-3">{p.name}</p>
+                  <span className="text-[10px] uppercase text-gray-400 tracking-wide">
+                    {p.category}
+                  </span>
+
+                  <p className="font-semibold text-sm mt-2">{p.name}</p>
+
                   <p className="text-sm text-gray-500 mt-1 mb-4">
                     {formatCurrency(p.price)}
                   </p>
@@ -216,36 +228,108 @@ export default function NewSaleContent() {
           </div>
         </div>
 
-        <div className="bg-white border rounded-2xl p-6 sticky top-6">
+        <div className="col-span-4">
+          <div className="bg-white border rounded-2xl p-6 sticky top-6 shadow-sm">
 
-          <h2 className="font-semibold mb-4">Resumen</h2>
+            <h2 className="font-semibold mb-4">Resumen</h2>
 
-          {selectedProducts.map((p) => (
-            <div key={p.id} className="flex justify-between text-sm mb-2">
-              <span>{p.name} x{p.quantity}</span>
-              <span>{formatCurrency(p.price * p.quantity)}</span>
+            {selectedProducts.length === 0 && (
+              <p className="text-sm text-gray-400">No hay productos agregados</p>
+            )}
+
+            {selectedProducts.map((p) => (
+              <div key={p.id} className="flex justify-between items-center text-sm mb-3">
+                <div>
+                  <p className="font-medium">{p.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {formatCurrency(p.price)}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button onClick={() => updateQuantity(p.id, p.quantity - 1)}>-</button>
+                  <span>{p.quantity}</span>
+                  <button onClick={() => updateQuantity(p.id, p.quantity + 1)}>+</button>
+                </div>
+              </div>
+            ))}
+
+            {/* 🔥 DESCUENTO FIX */}
+            <div className="mt-6">
+              <label className="text-sm text-gray-500">
+                Descuento (%)
+              </label>
+
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100}
+                step={1}
+                value={discount}
+                onChange={(e) => {
+                  let value = e.target.value
+
+                  if (value === "") {
+                    setDiscount("")
+                    return
+                  }
+
+                  let num = Number(value)
+
+                  if (num < 0) num = 0
+                  if (num > 100) num = 100
+
+                  setDiscount(num)
+                }}
+                className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
+                placeholder="0"
+              />
             </div>
-          ))}
 
-          <div className="mt-6 border-t pt-4">
-            <p className="text-sm text-gray-500">
-              Subtotal: {formatCurrency(subtotal)}
-            </p>
+            <div className="mt-4">
+              <label className="text-sm text-gray-500">Método de pago</label>
 
-            <p className="text-2xl font-bold mt-1">
-              {formatCurrency(total)}
-            </p>
+              <div className="flex mt-2 bg-gray-100 rounded-xl p-1">
+                {["efectivo", "transferencia"].map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setPaymentType(type)}
+                    className={`flex-1 py-2 text-sm rounded-lg ${
+                      paymentType === type
+                        ? "bg-white shadow text-[#E75480]"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 border-t pt-4">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+
+              <div className="flex justify-between text-lg font-semibold mt-2">
+                <span>Total</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading || selectedProducts.length === 0}
+              className="w-full mt-6 bg-[#E75480] text-white py-3 rounded-xl font-medium shadow-md hover:opacity-90"
+            >
+              {loading ? "Procesando..." : "Guardar venta"}
+            </button>
+
           </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={loading || selectedProducts.length === 0}
-            className="w-full mt-6 bg-[#E75480] text-white py-3 rounded-xl"
-          >
-            {loading ? "Procesando..." : "Finalizar venta"}
-          </button>
-
         </div>
+
       </div>
     </div>
   )
