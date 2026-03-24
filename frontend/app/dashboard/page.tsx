@@ -4,6 +4,7 @@
   import { createClient } from "@/lib/supabase"
   import { useRouter } from "next/navigation"
   import { getFollowups, completeFollowup } from "@/lib/api"
+  import { APP_VERSION } from "@/src/config/version"
 
   type Profile = {
     nombre?: string | null
@@ -432,6 +433,9 @@ setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
             </div>
           </div>
         </section>
+        <div className="fixed bottom-2 right-4 text-xs text-gray-400">
+  v{APP_VERSION}
+</div>
       </div>
     )
   }
