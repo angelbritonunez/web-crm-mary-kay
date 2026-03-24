@@ -14,6 +14,7 @@ export default function NewClient() {
   const [skinType, setSkinType] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [skinTypeError, setSkinTypeError] = useState(false)
 
   // 📞 FORMATO EN VIVO
   const formatPhoneInput = (value: string) => {
@@ -31,6 +32,14 @@ export default function NewClient() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
+
+    // 🚨 VALIDACIÓN
+    if (!skinType) {
+      setSkinTypeError(true)
+      return
+    }
+
+    setSkinTypeError(false)
     setLoading(true)
     setError(null)
 
@@ -42,7 +51,6 @@ export default function NewClient() {
         return
       }
 
-      // ✅ LIMPIAR TELÉFONO (solo números para BD)
       const cleanPhone = phone.replace(/\D/g, "")
 
       const { data, error } = await supabase
@@ -52,7 +60,7 @@ export default function NewClient() {
             name,
             phone: cleanPhone,
             email: email || null,
-            skin_type: skinType || null,
+            skin_type: skinType, // 🔒 ya no nullable
             user_id: userData.user.id,
           },
         ])
@@ -70,6 +78,8 @@ export default function NewClient() {
       setLoading(false)
     }
   }
+
+  const isFormValid = name && phone && skinType
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -126,12 +136,19 @@ export default function NewClient() {
 
         {/* Tipo de piel */}
         <div className="mb-6">
-          <label className="block text-sm mb-1">Tipo de piel</label>
+          <label className="block text-sm mb-1">
+            Tipo de piel <span className="text-pink-500">*</span>
+          </label>
 
           <select
             value={skinType}
-            onChange={(e) => setSkinType(e.target.value)}
-            className="w-full border px-3 py-2 rounded-lg"
+            onChange={(e) => {
+              setSkinType(e.target.value)
+              if (e.target.value) setSkinTypeError(false)
+            }}
+            className={`w-full border px-3 py-2 rounded-lg ${
+              skinTypeError ? "border-red-500" : ""
+            }`}
           >
             <option value="">Seleccionar</option>
             <option value="Seca">Seca</option>
@@ -139,14 +156,24 @@ export default function NewClient() {
             <option value="Mixta">Mixta</option>
             <option value="Sensible">Sensible</option>
           </select>
+
+          {skinTypeError && (
+            <p className="text-sm text-red-500 mt-1">
+              Debes seleccionar un tipo de piel
+            </p>
+          )}
         </div>
 
         {/* Botones */}
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={loading}
-            className="flex-1 bg-pink-500 text-white py-2 rounded-lg"
+            disabled={loading || !isFormValid}
+            className={`flex-1 py-2 rounded-lg text-white ${
+              loading || !isFormValid
+                ? "bg-pink-300 cursor-not-allowed"
+                : "bg-pink-500"
+            }`}
           >
             {loading ? "Guardando..." : "Guardar cliente"}
           </button>
