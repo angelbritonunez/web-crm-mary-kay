@@ -7,7 +7,7 @@
   import { APP_VERSION } from "@/src/config/version"
 
   type Profile = {
-    nombre?: string | null
+    first_name?: string | null
   }
 
   type FollowupItem = {
@@ -121,7 +121,7 @@
 
           const { data: profileData, error: profileError } = await supabase
             .from("profiles")
-            .select("nombre")
+            .select("first_name")
             .eq("id", userId)
             .maybeSingle()
 
@@ -280,7 +280,7 @@ setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">
-                Bienvenida, {profile?.nombre || "Consultora"}
+                Bienvenida, {profile?.first_name || "Consultora"}
               </h1>
               <p className="text-sm font-medium text-[#E75480]">Nunca es demasiado tarde para ser lo que podrías haber sido.</p>
             </div>
