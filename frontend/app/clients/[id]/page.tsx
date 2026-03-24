@@ -81,6 +81,8 @@ export default function ClientProfile() {
     return <div className="p-6">Cargando...</div>
   }
 
+  const status = client?.status || "prospect"
+
   return (
     <div className="space-y-8">
 
@@ -89,37 +91,62 @@ export default function ClientProfile() {
 
         <div className="flex justify-between items-start flex-wrap gap-4">
 
-          {/* INFO CLIENTE */}
-          <div className="space-y-2">
+<div className="space-y-3">
 
-            <h1 className="text-2xl font-semibold">
-              {client?.name}
-            </h1>
+  {/* 🔹 NOMBRE + STATUS */}
+  <div className="flex items-center gap-3 flex-wrap">
+    <h1 className="text-2xl font-semibold text-gray-900">
+      {client?.name}
+    </h1>
 
-            <p className="text-sm text-gray-500">
-              {formatPhone(client?.phone)}
-            </p>
 
-            {/* ✅ NUEVOS DATOS */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
 
-              {client?.email && (
-                <span>📧 {client.email}</span>
-              )}
+<span
+  className={`text-xs px-3 py-1 rounded-full font-medium ${
+    status === "customer"
+      ? "bg-pink-100 text-[#E75480]"
+      : status === "later"
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-gray-100 text-gray-600"
+  }`}
+>
+  {status === "customer"
+    ? "Cliente"
+    : status === "later"
+    ? "Más adelante"
+    : "Prospecto"}
+</span>
+  </div>
 
-              {client?.skin_type && (
-                <span>🧴 {client.skin_type}</span>
-              )}
+  {/* 🔹 TELÉFONO */}
+  <p className="text-sm text-gray-500">
+    {formatPhone(client?.phone)}
+  </p>
 
-              {client?.created_at && (
-                <span className="text-gray-400">
-                  {getClientSince(client.created_at)}
-                </span>
-              )}
+  {/* 🔹 METADATA */}
+  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
 
-            </div>
+    {client?.email && (
+      <span className="flex items-center gap-1">
+        📧 {client.email}
+      </span>
+    )}
 
-          </div>
+    {client?.skin_type && (
+      <span className="bg-pink-50 text-[#E75480] px-2.5 py-1 rounded-full font-medium">
+        {client.skin_type}
+      </span>
+    )}
+
+    {client?.created_at && (
+      <span className="text-gray-400">
+        {getClientSince(client.created_at)}
+      </span>
+    )}
+
+  </div>
+
+</div>
 
           {/* CTA */}
           <button

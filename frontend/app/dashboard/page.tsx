@@ -24,6 +24,7 @@
     name: string
     phone: string
     skin_type?: string | null
+    status?: string, 
     created_at?: string
   }
 
@@ -410,22 +411,44 @@ setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
                       onClick={() => router.push(`/clients/${c.id}`)}
                       className="block w-full rounded-2xl border border-gray-200 p-4 text-left transition hover:border-gray-300 hover:bg-gray-50"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-gray-900">
-                            {c.name}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-500">
-                            {formatPhone(c.phone)}
-                          </p>
-                        </div>
+<div className="flex items-start justify-between gap-3">
 
-                        {c.skin_type ? (
-                          <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
-                            {c.skin_type}
-                          </span>
-                        ) : null}
-                      </div>
+  <div className="min-w-0">
+    <p className="truncate text-sm font-semibold text-gray-900">
+      {c.name}
+    </p>
+
+    <p className="mt-1 text-sm text-gray-500">
+      {formatPhone(c.phone)}
+    </p>
+
+    {/* 🔥 STATUS */}
+    <span
+      className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full ${
+        c.status === "customer"
+          ? "bg-pink-100 text-[#E75480]"
+          : c.status === "later"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-gray-100 text-gray-600"
+      }`}
+    >
+      {c.status === "customer"
+        ? "Cliente"
+        : c.status === "later"
+        ? "Más adelante"
+        : "Prospecto"}
+    </span>
+  </div>
+
+  <div className="flex flex-col items-end gap-2">
+    {c.skin_type && (
+      <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
+        {c.skin_type}
+      </span>
+    )}
+  </div>
+
+</div>
                     </button>
                   ))
                 )}
