@@ -9,6 +9,7 @@ export default function NewClient() {
   const supabase = createClient()
 
   const [name, setName] = useState("")
+  const [status, setStatus] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [skinType, setSkinType] = useState("")
@@ -60,7 +61,8 @@ export default function NewClient() {
             name,
             phone: cleanPhone,
             email: email || null,
-            skin_type: skinType, // 🔒 ya no nullable
+            skin_type: skinType,
+            status,
             user_id: userData.user.id,
           },
         ])
@@ -134,6 +136,23 @@ export default function NewClient() {
           />
         </div>
 
+{/* Status cliente */}
+<div className="mb-4">
+  <label className="block text-sm mb-1">
+    Estado del cliente
+  </label>
+
+  <select
+    value={status}
+    onChange={(e) => setStatus(e.target.value)}
+    className="w-full border px-3 py-2 rounded-lg bg-white"
+  >
+    <option value="prospect">No ha comprado</option>
+    <option value="customer">Ya compró</option>
+    <option value="later">Más adelante</option>
+  </select>
+</div>
+
         {/* Tipo de piel */}
         <div className="mb-6">
           <label className="block text-sm mb-1">
@@ -154,8 +173,14 @@ export default function NewClient() {
             <option value="Seca">Seca</option>
             <option value="Grasa">Grasa</option>
             <option value="Mixta">Mixta</option>
-            <option value="Sensible">Sensible</option>
+            <option value="Normal">Normal</option>
+            <option value="Sensible piel grasa">Sensible piel grasa</option>
+            <option value="Sensible piel seca">Sensible piel seca</option>
+            <option value="Envejecimiento moderado">Envejecimiento moderado</option>
+            <option value="Envejecimiento avanzado">Envejecimiento avanzado</option>
           </select>
+
+          
 
           {skinTypeError && (
             <p className="text-sm text-red-500 mt-1">

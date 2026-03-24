@@ -8,6 +8,19 @@ from typing import List
 from fastapi import FastAPI, Header, HTTPException
 from typing import Optional
 
+VALID_SKIN_TYPES = [
+    "Seca",
+    "Grasa",
+    "Mixta",
+    "Normal",
+    "Sensible piel grasa",
+    "Sensible piel seca",
+    "Envejecimiento moderado",
+    "Envejecimiento avanzado"
+]
+
+VALID_STATUS = ["prospect", "customer", "later"]
+
 app = FastAPI()
 
 app.add_middleware(
@@ -24,6 +37,7 @@ class ClientRequest(BaseModel):
     name: str
     phone: str
     skin_type: str
+    status: Optional[str] = "prospect"
 
 class SaleItem(BaseModel):
     product_id: str
@@ -58,11 +72,19 @@ def test_db():
 @app.post("/clients")
 def create_client(client: ClientRequest):
     try:
+        # 🔒 VALIDACIONES
+        if client.skin_type not in VALID_SKIN_TYPES:
+            raise HTTPException(status_code=400, detail="Tipo de piel inválido")
+
+        if client.status not in VALID_STATUS:
+            raise HTTPException(status_code=400, detail="Status inválido")
+
         res = supabase.table("clients").insert(client.dict()).execute()
         return res.data
+
     except Exception as e:
         return {"error": str(e)}
-
+    
 @app.get("/clients")
 def get_clients(x_user_id: Optional[str] = Header(None)):
     if not x_user_id:
@@ -117,6 +139,12 @@ async def create_sale(sale: SaleRequest, request: Request):
         ]
 
         supabase.table("sale_items").insert(items).execute()
+        
+        supabase.table("clients").update(
+    {"status": "customer"}
+).eq(
+    "id", sale.client_id
+).execute()
 
         # 🔹 3. FOLLOWUPS (2+2+2)
         now = datetime.now(ZoneInfo("America/Santo_Domingo"))

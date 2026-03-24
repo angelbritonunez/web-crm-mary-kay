@@ -7,7 +7,7 @@
   import { APP_VERSION } from "@/src/config/version"
 
   type Profile = {
-    nombre?: string | null
+    first_name?: string | null
   }
 
   type FollowupItem = {
@@ -24,6 +24,7 @@
     name: string
     phone: string
     skin_type?: string | null
+    status?: string, 
     created_at?: string
   }
 
@@ -121,7 +122,7 @@
 
           const { data: profileData, error: profileError } = await supabase
             .from("profiles")
-            .select("nombre")
+            .select("first_name")
             .eq("id", userId)
             .maybeSingle()
 
@@ -280,7 +281,7 @@ setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
           <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">
-                Bienvenida, {profile?.nombre || "Consultora"}
+                Bienvenida, {profile?.first_name || "Consultora"}
               </h1>
               <p className="text-sm font-medium text-[#E75480]">Nunca es demasiado tarde para ser lo que podrías haber sido.</p>
             </div>
@@ -410,22 +411,44 @@ setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
                       onClick={() => router.push(`/clients/${c.id}`)}
                       className="block w-full rounded-2xl border border-gray-200 p-4 text-left transition hover:border-gray-300 hover:bg-gray-50"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-gray-900">
-                            {c.name}
-                          </p>
-                          <p className="mt-1 text-sm text-gray-500">
-                            {formatPhone(c.phone)}
-                          </p>
-                        </div>
+<div className="flex items-start justify-between gap-3">
 
-                        {c.skin_type ? (
-                          <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
-                            {c.skin_type}
-                          </span>
-                        ) : null}
-                      </div>
+  <div className="min-w-0">
+    <p className="truncate text-sm font-semibold text-gray-900">
+      {c.name}
+    </p>
+
+    <p className="mt-1 text-sm text-gray-500">
+      {formatPhone(c.phone)}
+    </p>
+
+    {/* 🔥 STATUS */}
+    <span
+      className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full ${
+        c.status === "customer"
+          ? "bg-pink-100 text-[#E75480]"
+          : c.status === "later"
+          ? "bg-yellow-100 text-yellow-700"
+          : "bg-gray-100 text-gray-600"
+      }`}
+    >
+      {c.status === "customer"
+        ? "Cliente"
+        : c.status === "later"
+        ? "Más adelante"
+        : "Prospecto"}
+    </span>
+  </div>
+
+  <div className="flex flex-col items-end gap-2">
+    {c.skin_type && (
+      <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
+        {c.skin_type}
+      </span>
+    )}
+  </div>
+
+</div>
                     </button>
                   ))
                 )}

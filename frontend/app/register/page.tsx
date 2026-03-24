@@ -8,7 +8,8 @@ export default function RegisterPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [nombre, setNombre] = useState("")
+  const [firstName, setFirstNombre] = useState("")
+  const [lastName, setLastNombre] = useState("")
   const [telefono, setTelefono] = useState("")
   const [empresa, setEmpresa] = useState("")
   const [email, setEmail] = useState("")
@@ -29,7 +30,7 @@ export default function RegisterPage() {
   }
 
   const handleRegister = async () => {
-    if (!nombre || !telefono || !empresa || !email || !password || !confirmPassword) {
+    if (!firstName || !lastName || !telefono || !empresa || !email || !password || !confirmPassword)  {
       alert("Completa todos los campos")
       return
     }
@@ -48,10 +49,17 @@ export default function RegisterPage() {
 
     try {
       // 🔥 CREAR USUARIO
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+    }
+  }
+})
 
       if (error) {
         alert(error.message)
@@ -60,21 +68,22 @@ export default function RegisterPage() {
       }
 
       // 🔥 ACTUALIZAR PROFILE (CLAVE)
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({
-            nombre,
-            telefono,
-            empresa,
-            correo: email,
-          })
-          .eq("id", data.user.id)
+if (data.user) {
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .upsert({
+      id: data.user.id,
+      correo: email,
+      first_name: firstName,
+      last_name: lastName,
+      telefono,
+      empresa,
+    });
 
-        if (profileError) {
-          console.error("Error actualizando profile:", profileError)
-        }
-      }
+  if (profileError) {
+    console.error("Error guardando profile:", profileError);
+  }
+}
 
       alert("Cuenta creada correctamente. Verifica tu correo.")
       router.push("/login")
@@ -107,9 +116,17 @@ export default function RegisterPage() {
 
           <input
             type="text"
-            placeholder="Nombre completo"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
+            placeholder="Nombre"
+            value={firstName}
+            onChange={(e) => setFirstNombre(e.target.value)}
+            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
+          />
+
+           <input
+            type="text"
+            placeholder="Apellido"
+            value={lastName}
+            onChange={(e) => setLastNombre(e.target.value)}
             className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
           />
 
