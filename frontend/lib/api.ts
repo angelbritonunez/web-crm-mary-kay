@@ -1,5 +1,6 @@
 import { createClient as createSupabaseClient } from "@/lib/supabase"
 
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // Helper para obtener el usuario autenticado
@@ -72,21 +73,6 @@ export const createSale = async (data: {
   return res.json()
 }
 
-// GET CLIENTS
-export const getClients = async () => {
-  const userId = await getUserId()
-
-  const res = await fetch(`${API_URL}/test-db`, {
-    headers: {
-      "x-user-id": userId,
-    },
-  })
-
-  if (!res.ok) throw new Error("Error obteniendo clientes")
-
-  return res.json()
-}
-
 // FOLLOWUPS
 export const getFollowups = async () => {
   const userId = await getUserId()
@@ -119,6 +105,25 @@ export const completeFollowup = async (id: string) => {
 
   if (!res.ok) {
     throw new Error("Error completando followup")
+  }
+
+  return res.json()
+}
+
+
+export const getClients = async () => {
+  const userId = await getUserId()
+
+  const res = await fetch(`${API_URL}/clients`, {
+    headers: {
+      "x-user-id": userId,
+    },
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    console.error("BACKEND ERROR:", error)
+    throw new Error("Error obteniendo clientes")
   }
 
   return res.json()

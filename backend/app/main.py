@@ -5,6 +5,8 @@ from zoneinfo import ZoneInfo
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+from fastapi import FastAPI, Header, HTTPException
+from typing import Optional
 
 app = FastAPI()
 
@@ -60,6 +62,21 @@ def create_client(client: ClientRequest):
         return res.data
     except Exception as e:
         return {"error": str(e)}
+
+@app.get("/clients")
+def get_clients(x_user_id: Optional[str] = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing x-user-id")
+
+    response = supabase.table("clients") \
+        .select("*") \
+        .eq("user_id", x_user_id) \
+        .execute()
+
+    return {
+        "status": "success",
+        "data": response.data
+    }
 
 # 🔥 SALES
 
