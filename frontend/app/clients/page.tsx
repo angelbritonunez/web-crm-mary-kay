@@ -1,155 +1,215 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { getClients } from "@/lib/api" // 🔥 NUEVO
+import { createClient } from "@/lib/supabase"
 
-type Client = {
-  id: string
-  name: string
-  phone: string
-  skin_type?: string | null
-  created_at?: string
-}
-
-export default function ClientsPage() {
+export default function NewClient() {
   const router = useRouter()
+  const supabase = createClient()
 
-  const [clients, setClients] = useState<Client[]>([])
-  const [search, setSearch] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [name, setName] = useState("")
+  const [status, setStatus] = useState("prospect") // ✅ FIX
+  const [phone, setPhone] = useState("")
+  const [email, setEmail] = useState("")
+  const [skinType, setSkinType] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [skinTypeError, setSkinTypeError] = useState(false)
 
-  const formatPhone = (phone: string) => {
-    const digits = (phone || "").replace(/\D/g, "").slice(0, 10)
+  const formatPhoneInput = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10)
 
     const part1 = digits.slice(0, 3)
     const part2 = digits.slice(3, 6)
     const part3 = digits.slice(6, 10)
 
-    if (!digits) return "Sin teléfono"
-    if (digits.length <= 3) return `(${part1}`
+    if (digits.length <= 3) return part1
     if (digits.length <= 6) return `(${part1}) ${part2}`
+
     return `(${part1}) ${part2}-${part3}`
   }
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const res = await getClients()
+  const handleSubmit = async (e: any) => {
+    e.preventDefault()
 
-        // ⚠️ Ajuste porque tu endpoint devuelve {status, data}
-        setClients(res.data || [])
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setLoading(false)
-      }
+    // 🚨 VALIDACIÓN
+    if (!skinType) {
+      setSkinTypeError(true)
+      return
     }
 
-    fetchClients()
-  }, [])
+    setSkinTypeError(false)
+    setLoading(true)
+    setError(null)
 
-  const filteredClients = useMemo(() => {
-    return clients.filter((c) =>
-      c.name.toLowerCase().includes(search.toLowerCase())
-    )
-  }, [search, clients])
+    try {
+      const { data: userData } = await supabase.auth.getUser()
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white border rounded-3xl p-6">
-          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-        </div>
+      if (!userData.user) {
+        router.push("/login")
+        return
+      }
 
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white p-5 rounded-2xl border">
-              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-              <div className="mt-2 h-3 w-24 bg-gray-100 rounded animate-pulse" />
-            </div>
-          ))}
-        </div>
-      </div>
-    )
+      const cleanPhone = phone.replace(/\D/g, "")
+
+      const { data, error } = await supabase
+        .from("clients")
+        .insert([
+          {
+            name,
+            phone: cleanPhone,
+            email: email || null,
+            skin_type: skinType,
+            status, // ✅ ya siempre tiene valor válido
+            user_id: userData.user.id,
+          },
+        ])
+        .select()
+        .single()
+
+      if (error) throw error
+
+      router.push(`/clients/${data.id}`)
+
+    } catch (err: any) {
+      console.error(err)
+      setError("Error creando el cliente")
+    } finally {
+      setLoading(false)
+    }
   }
 
+  // ✅ status ya no es problema → no lo incluimos
+  const isFormValid = name && phone && skinType
+
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
 
-      {/* HEADER */}
-      <section className="bg-white border rounded-3xl p-6">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-xl shadow-md w-full max-w-md"
+      >
+        <h1 className="text-2xl font-bold mb-6">
+          Nuevo cliente
+        </h1>
 
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Clientes
-            </h1>
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+            {error}
           </div>
+        )}
 
-          <button
-            onClick={() => router.push("/clients/new")}
-            className="bg-[#E75480] text-white px-4 py-2.5 rounded-2xl text-sm font-medium"
+        {/* Nombre */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Nombre</label>
+          <input
+            type="text"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Teléfono */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Teléfono</label>
+          <input
+            type="text"
+            required
+            value={phone}
+            onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
+            placeholder="(000) 000-0000"
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Email */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">Email (opcional)</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg"
+          />
+        </div>
+
+        {/* Status cliente */}
+        <div className="mb-4">
+          <label className="block text-sm mb-1">
+            Estado del cliente
+          </label>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full border px-3 py-2 rounded-lg bg-white"
           >
-            Nuevo cliente
+            <option value="prospect">No ha comprado</option>
+            <option value="customer">Ya compró</option>
+            <option value="later">Más adelante</option>
+          </select>
+        </div>
+
+        {/* Tipo de piel */}
+        <div className="mb-6">
+          <label className="block text-sm mb-1">
+            Tipo de piel <span className="text-pink-500">*</span>
+          </label>
+
+          <select
+            value={skinType}
+            onChange={(e) => {
+              setSkinType(e.target.value)
+              if (e.target.value) setSkinTypeError(false)
+            }}
+            className={`w-full border px-3 py-2 rounded-lg ${
+              skinTypeError ? "border-red-500" : ""
+            }`}
+          >
+            <option value="">Seleccionar</option>
+            <option value="Seca">Seca</option>
+            <option value="Grasa">Grasa</option>
+            <option value="Mixta">Mixta</option>
+            <option value="Normal">Normal</option>
+            <option value="Sensible piel grasa">Sensible piel grasa</option>
+            <option value="Sensible piel seca">Sensible piel seca</option>
+            <option value="Envejecimiento moderado">Envejecimiento moderado</option>
+            <option value="Envejecimiento avanzado">Envejecimiento avanzado</option>
+          </select>
+
+          {skinTypeError && (
+            <p className="text-sm text-red-500 mt-1">
+              Debes seleccionar un tipo de piel
+            </p>
+          )}
+        </div>
+
+        {/* Botones */}
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            disabled={loading || !isFormValid}
+            className={`flex-1 py-2 rounded-lg text-white ${
+              loading || !isFormValid
+                ? "bg-pink-300 cursor-not-allowed"
+                : "bg-pink-500"
+            }`}
+          >
+            {loading ? "Guardando..." : "Guardar cliente"}
           </button>
 
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard")}
+            className="flex-1 border border-gray-300 py-2 rounded-lg"
+          >
+            Cancelar
+          </button>
         </div>
-      </section>
-
-      {/* SEARCH */}
-      <section>
-        <input
-          type="text"
-          placeholder="Buscar cliente..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-200"
-        />
-      </section>
-
-      {/* LIST */}
-      <section className="space-y-4">
-        {filteredClients.length === 0 ? (
-          <div className="text-center py-12 bg-white border rounded-2xl">
-            <p className="text-gray-700 font-medium">
-              No se encontraron clientes
-            </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Intenta con otro nombre o registra uno nuevo
-            </p>
-          </div>
-        ) : (
-          filteredClients.map((c) => (
-            <div
-              key={c.id}
-              onClick={() => router.push(`/clients/${c.id}`)}
-              className="bg-white p-5 rounded-2xl border cursor-pointer hover:border-gray-300 transition"
-            >
-              <div className="flex justify-between items-start">
-
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {c.name}
-                  </p>
-
-                  <p className="text-sm text-gray-500 mt-1">
-                    {formatPhone(c.phone)}
-                  </p>
-                </div>
-
-                {c.skin_type && (
-                  <span className="text-xs bg-pink-50 text-[#E75480] px-2 py-1 rounded-full">
-                    {c.skin_type}
-                  </span>
-                )}
-
-              </div>
-            </div>
-          ))
-        )}
-      </section>
-
+      </form>
     </div>
   )
 }
