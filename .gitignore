@@ -1,12 +1,49 @@
-# Frontend
-frontend/node_modules
-frontend/.next
+# =========================
+# FRONTEND
+# =========================
+frontend/node_modules/
+frontend/.next/
 frontend/.env.local
 
-# Backend
+# =========================
+# BACKEND
+# =========================
 backend/.env
-backend/__pycache__
+backend/__pycache__/
+backend/**/*.pyc
 
-# General
+# =========================
+# PYTHON (GLOBAL)
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+
+# =========================
+# NODE / JS (GLOBAL)
+# =========================
+node_modules/
+.next/
+
+# =========================
+# ENV
+# =========================
 .env
+.env.local
+
+# =========================
+# LOGS
+# =========================
 *.log
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
