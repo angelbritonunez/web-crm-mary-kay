@@ -3,6 +3,7 @@
   import { useEffect, useMemo, useState } from "react"
   import { createClient } from "@/lib/supabase"
   import { useRouter } from "next/navigation"
+  import { getFollowups, completeFollowup } from "@/lib/api"
 
   type Profile = {
     nombre?: string | null
@@ -29,7 +30,9 @@
     const router = useRouter()
 
     const [profile, setProfile] = useState<Profile | null>(null)
-    const [followups, setFollowups] = useState<FollowupItem[]>([])
+    const [todayFollowups, setTodayFollowups] = useState<FollowupItem[]>([])
+    const [overdueFollowups, setOverdueFollowups] = useState<FollowupItem[]>([])
+  const [upcomingFollowups, setUpcomingFollowups] = useState<FollowupItem[]>([])
     const [clients, setClients] = useState<ClientItem[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -136,50 +139,22 @@
           const end = new Date(today)
           end.setHours(23, 59, 59, 999)
 
-          const { data: followupsData, error: followupsError } = await supabase
-            .from("followups")
-            .select(`
-              id,
-              mensaje,
-              type,
-              scheduled_date,
-              clients (
-                name,
-                phone
-              )
-            `)
-            .eq("user_id", userId)
-            .eq("status", "pending")
-            .order("scheduled_date", { ascending: true })
+const data = await getFollowups()
 
-          if (followupsError) {
-            console.error("FOLLOWUPS ERROR:", followupsError)
-          }
-
-       const now = new Date()
-
-const filtered = (followupsData || []).filter((f: any) => {
-  const date = new Date(f.scheduled_date)
-
-  // 🔥 lógica clave:
-  return (
-    date <= now || // overdue
-    Math.abs(date.getTime() - now.getTime()) < 7 * 24 * 60 * 60 * 1000 // próximos 7 días
-  )
-})
-
-const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
+const mapItem = (f: any) => ({
   id: f.id,
   mensaje: f.mensaje,
   type: f.type,
   scheduled_date: f.scheduled_date,
-  client_name: f.clients?.name || "Cliente",
-  phone: f.clients?.phone || "",
-}))
+  client_name: f.client_name,
+  phone: f.phone,
+})
 
-          if (isMounted) {
-            setFollowups(mappedFollowups)
-          }
+if (isMounted) {
+  setTodayFollowups((data.today || []).map(mapItem))
+  setOverdueFollowups((data.overdue || []).map(mapItem))
+  setUpcomingFollowups((data.upcoming || []).map(mapItem))
+}
 
           const { data: clientsData, error: clientsError } = await supabase
             .from("clients")
@@ -211,7 +186,10 @@ const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
 
     const stats = useMemo(() => {
       const totalClients = clients.length
-      const pendingFollowups = followups.length
+     const pendingFollowups =
+  todayFollowups.length +
+  overdueFollowups.length +
+  upcomingFollowups.length
       const clientsWithPhone = clients.filter((c) => (c.phone || "").trim() !== "").length
 
       return {
@@ -219,7 +197,7 @@ const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
         pendingFollowups,
         clientsWithPhone,
       }
-    }, [clients, followups])
+    }, [clients, todayFollowups, overdueFollowups, upcomingFollowups])
 
     const markAsSent = async (id: string) => {
       const supabase = createClient()
@@ -234,7 +212,9 @@ const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
         return
       }
 
-      setFollowups((prev) => prev.filter((f) => f.id !== id))
+      setTodayFollowups((prev) => prev.filter((f) => f.id !== id))
+setOverdueFollowups((prev) => prev.filter((f) => f.id !== id))
+setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
     }
 
     if (loading) {
@@ -329,7 +309,7 @@ const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
             </div>
 
             <div className="mt-6 space-y-4">
-              {followups.length === 0 ? (
+              {todayFollowups.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center">
                   <p className="text-sm font-medium text-gray-700">
                     No hay seguimientos pendientes para hoy
@@ -339,7 +319,7 @@ const mappedFollowups: FollowupItem[] = filtered.map((f: any) => ({
                   </p>
                 </div>
               ) : (
-                followups.map((f) => (
+                todayFollowups.map((f) => (
                   <div
                     key={f.id}
                     className="rounded-2xl border border-gray-200 p-5 transition hover:border-gray-300"
