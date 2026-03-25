@@ -63,7 +63,7 @@ export default function UserMenu() {
         <div className="absolute right-0 mt-2 w-52 bg-white border rounded-xl shadow-lg p-2 z-50 animate-in fade-in zoom-in-95">
 
           <Link
-            href="/perfil"
+            href="/profile"
             onClick={() => setOpen(false)} // ✅ cerrar al navegar
             className="block px-3 py-2 rounded-lg hover:bg-gray-100 text-sm transition"
           >
