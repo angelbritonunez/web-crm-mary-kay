@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createSale } from "@/lib/api"
 import { createClient } from "@/lib/supabase"
+import { Eye, EyeOff } from "lucide-react"
 
 export default function NewSaleContent() {
   const router = useRouter()
@@ -18,6 +19,8 @@ export default function NewSaleContent() {
 
   const [paymentType, setPaymentType] = useState("efectivo")
   const [discount, setDiscount] = useState<number | "">("")
+
+  const [showProfit, setShowProfit] = useState(false)
 
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("Todos")
@@ -92,13 +95,19 @@ export default function NewSaleContent() {
     0
   )
 
-  const discountValue = Number(discount) || 0
+  const discountValue = Math.min(50, Number(discount) || 0)
 
   // ✅ FIX TOTAL (nunca negativo)
   const total = Math.max(
     0,
     subtotal - (subtotal * discountValue) / 100
   )
+
+  // COSTO (50%)
+const cost = subtotal * 0.5
+
+// UTILIDAD
+const profit = total - cost
 
   const handleSubmit = async (e: any) => {
     e.preventDefault()
@@ -264,7 +273,7 @@ export default function NewSaleContent() {
                 type="number"
                 inputMode="numeric"
                 min={0}
-                max={100}
+                max={50}
                 step={1}
                 value={discount}
                 onChange={(e) => {
@@ -278,7 +287,7 @@ export default function NewSaleContent() {
                   let num = Number(value)
 
                   if (num < 0) num = 0
-                  if (num > 100) num = 100
+                  if (num > 50) num = 50
 
                   setDiscount(num)
                 }}
@@ -312,6 +321,34 @@ export default function NewSaleContent() {
                 <span>Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
+              <div className="flex justify-between items-center text-sm mt-2">
+  <span className="text-gray-500">Utilidad</span>
+
+  <div className="flex items-center gap-2">
+    <span
+      className={`font-medium ${
+        profit > 0 ? "text-green-600" : "text-red-500"
+      }`}
+    >
+      {showProfit ? formatCurrency(profit) : "••••••"}
+    </span>
+
+    <button
+      type="button"
+      onClick={() => setShowProfit(!showProfit)}
+      className="text-gray-400 hover:text-[#E75480] transition"
+      title="Mostrar / ocultar utilidad"
+    >
+      {showProfit ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
+</div>
+
+{showProfit && profit === 0 && (
+  <p className="text-xs text-red-500 mt-1 text-right pr-6">
+    ⚠ Sin ganancia en esta venta
+  </p>
+)}
 
               <div className="flex justify-between text-lg font-semibold mt-2">
                 <span>Total</span>
