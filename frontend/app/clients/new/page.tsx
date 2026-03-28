@@ -16,6 +16,7 @@ export default function NewClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [skinTypeError, setSkinTypeError] = useState(false)
+  const [followupEnabled, setFollowupEnabled] = useState(true)
 
   // 📞 FORMATO EN VIVO
   const formatPhoneInput = (value: string) => {
@@ -64,6 +65,7 @@ export default function NewClient() {
             skin_type: skinType,
             status,
             user_id: userData.user.id,
+            followup_enabled: followupEnabled,
           },
         ])
         .select()
@@ -188,6 +190,18 @@ export default function NewClient() {
             </p>
           )}
         </div>
+        {/* Follow-up automático */}
+<div className="mb-6 flex items-start gap-2">
+  <input
+    type="checkbox"
+    checked={followupEnabled}
+    onChange={(e) => setFollowupEnabled(e.target.checked)}
+    className="mt-1"
+  />
+  <label className="text-sm">
+    Incluir en seguimiento automático (2+2+2)
+  </label>
+</div>
 
         {/* Botones */}
         <div className="flex gap-3">

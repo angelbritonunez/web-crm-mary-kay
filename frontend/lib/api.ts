@@ -24,6 +24,7 @@ export const createClient = async (data: {
   name: string
   phone: string
   skin_type: string
+  followup_enabled?: boolean
 }) => {
   const userId = await getUserId()
 
@@ -33,7 +34,10 @@ export const createClient = async (data: {
       "Content-Type": "application/json",
       "x-user-id": userId,
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      ...data,
+      followup_enabled: data.followup_enabled ?? true,
+    }),
   })
 
   if (!res.ok) throw new Error("Error creando cliente")
