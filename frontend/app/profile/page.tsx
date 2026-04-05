@@ -46,7 +46,7 @@ export default function ProfilePage() {
 
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("first_name, last_name, telefono")
+          .select("first_name, last_name, phone")
           .eq("id", user.id)
           .maybeSingle()
 
@@ -58,7 +58,7 @@ export default function ProfilePage() {
           const initialData = {
             first_name: profile?.first_name || "",
             last_name: profile?.last_name || "",
-            phone: profile?.telefono || "",
+            phone: profile?.phone || "",
             email: user.email || "",
           }
 
@@ -128,7 +128,7 @@ export default function ProfilePage() {
         .update({
           first_name: form.first_name,
           last_name: form.last_name,
-          telefono: form.phone,
+          phone: form.phone.replace(/\D/g, ""),
         })
         .eq("id", user.id)
 

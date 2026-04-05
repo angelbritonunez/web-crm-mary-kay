@@ -48,42 +48,41 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      // 🔥 CREAR USUARIO
-const { data, error } = await supabase.auth.signUp({
+      //CREAR USUARIO
+const { error: signUpError } = await supabase.auth.signUp({
   email,
   password,
   options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
     data: {
       first_name: firstName,
       last_name: lastName,
+      phone: telefono,
+      empresa: empresa,
     }
   }
 })
 
-      if (error) {
-        alert(error.message)
-        setLoading(false)
-        return
-      }
+if (signUpError) {
+  alert(signUpError.message)
+  setLoading(false)
+  return
+}
 
-      // 🔥 ACTUALIZAR PROFILE (CLAVE)
-if (data.user) {
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .upsert({
-      id: data.user.id,
-      correo: email,
+      //ACTUALIZAR PROFILE 
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    data: {
       first_name: firstName,
       last_name: lastName,
-      telefono,
-      empresa,
-    });
-
-  if (profileError) {
-    console.error("Error guardando profile:", profileError);
+      phone: telefono,
+      empresa: empresa,
+    }
   }
-}
+})
 
       alert("Cuenta creada correctamente. Verifica tu correo.")
       router.push("/login")
