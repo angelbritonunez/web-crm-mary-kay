@@ -28,6 +28,8 @@ type ClientItem = {
   created_at?: string
 }
 
+const CARDS_PER_PAGE = 10
+
 export default function Dashboard() {
   const router = useRouter()
 
@@ -36,6 +38,10 @@ export default function Dashboard() {
   const [todayFollowups, setTodayFollowups] = useState<FollowupItem[]>([])
   const [overdueFollowups, setOverdueFollowups] = useState<FollowupItem[]>([])
   const [editedMessages, setEditedMessages] = useState<Record<string, string>>({})
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [discardingId, setDiscardingId] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(CARDS_PER_PAGE)
+
   const priorityFollowups = [
     ...overdueFollowups,
     ...todayFollowups
@@ -72,11 +78,11 @@ export default function Dashboard() {
   const getFollowupLabel = (type: string | null) => {
     switch (type) {
       case "day2":
-        return "Seguimiento a 2 días"
+        return "2 días"
       case "week2":
-        return "Seguimiento a 2 semanas"
+        return "2 semanas"
       case "month2":
-        return "Seguimiento a 2 meses"
+        return "2 meses"
       default:
         return "Seguimiento"
     }
@@ -91,6 +97,22 @@ export default function Dashboard() {
       month: "short",
       year: "numeric",
     })
+  }
+
+  // Build a phone → name lookup from all loaded clients so we can resolve
+  // names even if the API returns a placeholder like "Cliente 1".
+  const phoneToName = useMemo(() => {
+    const map: Record<string, string> = {}
+    clients.forEach((c) => {
+      const digits = (c.phone || "").replace(/\D/g, "")
+      if (digits) map[digits] = c.name
+    })
+    return map
+  }, [clients])
+
+  const resolveClientName = (f: FollowupItem) => {
+    const digits = (f.phone || "").replace(/\D/g, "")
+    return (digits && phoneToName[digits]) || f.client_name || "Cliente"
   }
 
   useEffect(() => {
@@ -162,14 +184,16 @@ export default function Dashboard() {
           setTodayFollowups((data.today || []).map(mapItem))
           setOverdueFollowups((data.overdue || []).map(mapItem))
           setUpcomingFollowups((data.upcoming || []).map(mapItem))
+          setVisibleCount(CARDS_PER_PAGE)
         }
 
+        // Load all clients (no limit) so name lookup covers all followups.
+        // The "Clientes recientes" widget uses .slice(0, 6) for display.
         const { data: clientsData, error: clientsError } = await supabase
           .from("clients")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
-          .limit(6)
 
         if (clientsError) {
           console.error("CLIENTS ERROR:", clientsError)
@@ -220,9 +244,19 @@ export default function Dashboard() {
       return
     }
 
+    setDiscardingId(null)
     setTodayFollowups((prev) => prev.filter((f) => f.id !== id))
     setOverdueFollowups((prev) => prev.filter((f) => f.id !== id))
     setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
+  }
+
+  const toggleExpand = (id: string) => {
+    setExpandedCards((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   if (loading) {
@@ -280,8 +314,19 @@ export default function Dashboard() {
       </div>
     )
   }
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
+
+  const visibleFollowups = priorityFollowups.slice(0, visibleCount)
+  const hasMore = priorityFollowups.length > visibleCount
+
+  // Grammatically correct counter in Spanish
+  const counterText =
+    totalToday === 1
+      ? "Tienes 1 cliente para contactar hoy"
+      : `Tienes ${totalToday} clientes para contactar hoy`
+
   return (
     <div className="space-y-8">
       <section className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
@@ -339,68 +384,97 @@ export default function Dashboard() {
 
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
+          {/* Section header */}
+          <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
                 Seguimientos del día
               </h2>
-              <p className="mt-1 text-sm text-[#E75480] font-medium">
-                {totalToday > 0
-                  ? `🔥 Hoy tienes ${totalToday} cliente(s) para contactar`
-                  : "💪 No tienes seguimientos hoy, buen trabajo"}
-              </p>
               <p className="mt-1 text-sm text-gray-500">
                 Prioriza los contactos que debes atender hoy.
               </p>
             </div>
+
+            {totalToday > 0 && (
+              <span className="rounded-full bg-[#E75480] px-3 py-1 text-xs font-semibold text-white">
+                {totalToday}
+              </span>
+            )}
           </div>
 
-          <div className="mt-6 space-y-4">
-          </div>
-
-          {priorityFollowups.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 py-8 text-center">
-              <p className="text-sm font-medium text-gray-700">
-                No hay seguimientos pendientes para hoy
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                Cuando tengas tareas programadas aparecerán aquí.
-              </p>
+          {/* Counter banner */}
+          {totalToday > 0 ? (
+            <div className="mt-4 rounded-xl bg-pink-50 px-4 py-2.5">
+              <p className="text-sm font-medium text-[#E75480]">{counterText}</p>
             </div>
-          ) : (
-            <>
-              {priorityFollowups.map((f) => {
-                const message = editedMessages[f.id] ?? f.mensaje ?? ""
+          ) : null}
 
-                const d = new Date(f.scheduled_date)
-                d.setHours(0, 0, 0, 0)
-                const isOverdue = d < today
+          {/* Card list */}
+          <div className="mt-5 space-y-3">
+            {priorityFollowups.length === 0 ? (
+              /* ── Empty state ── */
+              <div className="flex flex-col items-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-100">
+                  <svg className="h-6 w-6 text-[#E75480]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="mt-3 text-sm font-semibold text-gray-800">
+                  ¡Todo al día!
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  No tienes seguimientos pendientes para hoy.
+                </p>
+              </div>
+            ) : (
+              <>
+                {visibleFollowups.map((f) => {
+                  const message = editedMessages[f.id] ?? f.mensaje ?? ""
+                  const isExpanded = expandedCards.has(f.id)
+                  const isDiscarting = discardingId === f.id
 
-                return (
-                  <div
-                    key={f.id}
-                    className={`rounded-2xl p-5 border ${isOverdue
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-200"
+                  const d = new Date(f.scheduled_date)
+                  d.setHours(0, 0, 0, 0)
+                  const isOverdue = d < today
+
+                  const clientName = resolveClientName(f)
+
+                  return (
+                    <div
+                      key={f.id}
+                      className={`rounded-2xl border p-4 transition-colors ${
+                        isOverdue
+                          ? "border-red-200 bg-red-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
-                  >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0">
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-semibold text-gray-900">
-                            {f.client_name}
+                    >
+                      {/* ── Row 1: name + badges ── */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-bold text-gray-900">
+                            {clientName}
                           </p>
-                          <span className="rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
-                            {getFollowupLabel(f.type)}
-                          </span>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-medium text-[#E75480]">
+                              {getFollowupLabel(f.type)}
+                            </span>
+                            {isOverdue && (
+                              <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-600">
+                                Vencido
+                              </span>
+                            )}
+                            <span className="text-xs text-gray-400">
+                              {formatShortDate(f.scheduled_date)}
+                            </span>
+                          </div>
                         </div>
+                        <span className="shrink-0 text-sm text-gray-400">
+                          {formatPhone(f.phone)}
+                        </span>
+                      </div>
 
-                        <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
-                          <span>•</span>
-                          <span>{formatShortDate(f.scheduled_date)}</span>
-                        </div>
-
+                      {/* ── Row 2: message preview / editable textarea ── */}
+                      {isExpanded ? (
                         <textarea
                           value={message}
                           onChange={(e) =>
@@ -409,34 +483,76 @@ export default function Dashboard() {
                               [f.id]: e.target.value,
                             }))
                           }
-                          className="mt-4 w-full rounded-xl bg-gray-50 p-4 text-sm leading-6 text-gray-700 resize-none border border-transparent focus:border-[#E75480] focus:outline-none"
+                          rows={4}
+                          className="mt-3 w-full rounded-xl bg-gray-50 p-3 text-sm leading-6 text-gray-700 resize-none border border-[#E75480] focus:outline-none"
                         />
-                      </div>
+                      ) : (
+                        <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-gray-600">
+                          {message || <span className="italic text-gray-400">Sin mensaje</span>}
+                        </p>
+                      )}
 
-                      <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => toggleExpand(f.id)}
+                        className="mt-1 text-xs font-medium text-[#E75480] hover:underline"
+                      >
+                        {isExpanded ? "Cerrar" : "Editar mensaje"}
+                      </button>
+
+                      {/* ── Row 3: actions ── */}
+                      <div className="mt-3 flex items-center gap-2">
+                        {/* Primary — Enviar */}
                         <button
                           onClick={() => {
                             localStorage.setItem("source_followup_id", f.id)
                             openWhatsApp(f.phone, message)
                           }}
-                          className="rounded-xl bg-[#E75480] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                          className="flex-1 rounded-xl bg-[#E75480] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-95"
                         >
-                          Enviar
+                          Enviar por WhatsApp
                         </button>
 
-                        <button
-                          onClick={() => markAsSent(f.id)}
-                          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                        >
-                          Descartar
-                        </button>
+                        {/* Ghost — Descartar with inline confirmation */}
+                        {isDiscarting ? (
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <button
+                              onClick={() => markAsSent(f.id)}
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                            >
+                              Confirmar
+                            </button>
+                            <button
+                              onClick={() => setDiscardingId(null)}
+                              className="rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-50"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDiscardingId(f.id)}
+                            className="shrink-0 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-500 transition hover:border-gray-300 hover:bg-gray-50"
+                          >
+                            Descartar
+                          </button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </>
-          )}
+                  )
+                })}
+
+                {/* ── Pagination: Ver más ── */}
+                {hasMore && (
+                  <button
+                    onClick={() => setVisibleCount((n) => n + CARDS_PER_PAGE)}
+                    className="w-full rounded-2xl border border-dashed border-gray-200 py-3 text-sm font-medium text-gray-500 transition hover:border-[#E75480] hover:text-[#E75480]"
+                  >
+                    Ver más ({priorityFollowups.length - visibleCount} restantes)
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -471,7 +587,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                clients.map((c) => (
+                clients.slice(0, 6).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => router.push(`/clients/${c.id}`)}
@@ -488,7 +604,6 @@ export default function Dashboard() {
                           {formatPhone(c.phone)}
                         </p>
 
-                        {/* 🔥 STATUS */}
                         <span
                           className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full ${c.status === "customer"
                               ? "bg-pink-100 text-[#E75480]"
