@@ -110,6 +110,7 @@ const cost = subtotal * 0.5
 const profit = total - cost
 
   const handleSubmit = async (e: any) => {
+    const sourceFollowupId = localStorage.getItem("source_followup_id")
     e.preventDefault()
     setLoading(true)
     setError(null)
@@ -126,6 +127,7 @@ const profit = total - cost
         total,
         discount: discountValue,
         payment_type: paymentType,
+        source_followup_id: sourceFollowupId,
         items: selectedProducts.map((p) => ({
           product_id: p.id,
           quantity: p.quantity,
@@ -134,6 +136,7 @@ const profit = total - cost
       }
 
       await createSale(payload)
+      localStorage.removeItem("source_followup_id")
 
       router.push(`/clients/${clientId}`)
 
