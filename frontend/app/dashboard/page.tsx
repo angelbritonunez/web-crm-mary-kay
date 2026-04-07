@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { getFollowups, completeFollowup } from "@/lib/api"
+import { getFollowups } from "@/lib/api"
 import { APP_VERSION } from "@/src/config/version"
 
 type Profile = {
@@ -24,7 +24,7 @@ type ClientItem = {
   name: string
   phone: string
   skin_type?: string | null
-  status?: string,
+  status?: string
   created_at?: string
 }
 
@@ -33,27 +33,26 @@ const CARDS_PER_PAGE = 10
 export default function Dashboard() {
   const router = useRouter()
 
-  const [metrics, setMetrics] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [todayFollowups, setTodayFollowups] = useState<FollowupItem[]>([])
   const [overdueFollowups, setOverdueFollowups] = useState<FollowupItem[]>([])
+  const [upcomingFollowups, setUpcomingFollowups] = useState<FollowupItem[]>([])
+  const [clients, setClients] = useState<ClientItem[]>([])
+  const [monthSalesCount, setMonthSalesCount] = useState(0)
   const [editedMessages, setEditedMessages] = useState<Record<string, string>>({})
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [discardingId, setDiscardingId] = useState<string | null>(null)
   const [visibleCount, setVisibleCount] = useState(CARDS_PER_PAGE)
+  const [loading, setLoading] = useState(true)
 
   const priorityFollowups = [
     ...overdueFollowups,
-    ...todayFollowups
+    ...todayFollowups,
   ].sort(
     (a, b) =>
-      new Date(a.scheduled_date).getTime() -
-      new Date(b.scheduled_date).getTime()
+      new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
   )
   const totalToday = priorityFollowups.length
-  const [upcomingFollowups, setUpcomingFollowups] = useState<FollowupItem[]>([])
-  const [clients, setClients] = useState<ClientItem[]>([])
-  const [loading, setLoading] = useState(true)
 
   const openWhatsApp = (phone: string, message: string) => {
     const cleanPhone = (phone || "").replace(/\D/g, "")
@@ -64,11 +63,9 @@ export default function Dashboard() {
 
   const formatPhone = (phone: string) => {
     const digits = (phone || "").replace(/\D/g, "").slice(0, 10)
-
     const part1 = digits.slice(0, 3)
     const part2 = digits.slice(3, 6)
     const part3 = digits.slice(6, 10)
-
     if (!digits) return "Sin teléfono"
     if (digits.length <= 3) return `(${part1}`
     if (digits.length <= 6) return `(${part1}) ${part2}`
@@ -77,21 +74,16 @@ export default function Dashboard() {
 
   const getFollowupLabel = (type: string | null) => {
     switch (type) {
-      case "day2":
-        return "2 días"
-      case "week2":
-        return "2 semanas"
-      case "month2":
-        return "2 meses"
-      default:
-        return "Seguimiento"
+      case "day2":   return "2 días"
+      case "week2":  return "2 semanas"
+      case "month2": return "2 meses"
+      default:       return "Seguimiento"
     }
   }
 
   const formatShortDate = (date: string) => {
     const value = new Date(date)
     if (Number.isNaN(value.getTime())) return "Fecha no disponible"
-
     return value.toLocaleDateString("es-DO", {
       day: "2-digit",
       month: "short",
@@ -99,8 +91,7 @@ export default function Dashboard() {
     })
   }
 
-  // Build a phone → name lookup from all loaded clients so we can resolve
-  // names even if the API returns a placeholder like "Cliente 1".
+  // Build phone → name lookup so names are always resolved correctly
   const phoneToName = useMemo(() => {
     const map: Record<string, string> = {}
     clients.forEach((c) => {
@@ -136,42 +127,41 @@ export default function Dashboard() {
 
         const userId = user.id
 
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("first_name")
-          .eq("id", userId)
-          .maybeSingle()
+        // Start of current month in America/Santo_Domingo
+        const now = new Date(
+          new Date().toLocaleString("en-US", { timeZone: "America/Santo_Domingo" })
+        )
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const endOfMonth   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString()
 
-        if (profileError) {
-          console.error("PROFILE ERROR:", profileError)
-        }
+        // All queries in parallel
+        const [profileResult, followupsData, clientsResult, salesResult] =
+          await Promise.all([
+            supabase
+              .from("profiles")
+              .select("first_name")
+              .eq("id", userId)
+              .maybeSingle(),
+            getFollowups(),
+            supabase
+              .from("clients")
+              .select("*")
+              .eq("user_id", userId)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("sales")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", userId)
+              .gte("created_at", startOfMonth)
+              .lte("created_at", endOfMonth),
+          ])
 
-        if (isMounted) {
-          setProfile(profileData || null)
-        }
+        if (!isMounted) return
 
-        const today = new Date()
-        const start = new Date(today)
-        start.setHours(0, 0, 0, 0)
+        if (profileResult.error) console.error("PROFILE ERROR:", profileResult.error)
+        if (clientsResult.error) console.error("CLIENTS ERROR:", clientsResult.error)
 
-        const end = new Date(today)
-        end.setHours(23, 59, 59, 999)
-
-        const data = await getFollowups()
-
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/metrics/followups`, {
-          headers: {
-            "x-user-id": user.id,
-          },
-        })
-
-        const dataMetrics = await res.json()
-
-        if (isMounted) {
-          setMetrics(dataMetrics)
-        }
-
-        const mapItem = (f: any) => ({
+        const mapItem = (f: any): FollowupItem => ({
           id: f.id,
           mensaje: f.mensaje,
           type: f.type,
@@ -180,29 +170,14 @@ export default function Dashboard() {
           phone: f.phone,
         })
 
-        if (isMounted) {
-          setTodayFollowups((data.today || []).map(mapItem))
-          setOverdueFollowups((data.overdue || []).map(mapItem))
-          setUpcomingFollowups((data.upcoming || []).map(mapItem))
-          setVisibleCount(CARDS_PER_PAGE)
-        }
-
-        // Load all clients (no limit) so name lookup covers all followups.
-        // The "Clientes recientes" widget uses .slice(0, 6) for display.
-        const { data: clientsData, error: clientsError } = await supabase
-          .from("clients")
-          .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false })
-
-        if (clientsError) {
-          console.error("CLIENTS ERROR:", clientsError)
-        }
-
-        if (isMounted) {
-          setClients((clientsData as ClientItem[]) || [])
-          setLoading(false)
-        }
+        setProfile(profileResult.data || null)
+        setTodayFollowups((followupsData.today   || []).map(mapItem))
+        setOverdueFollowups((followupsData.overdue || []).map(mapItem))
+        setUpcomingFollowups((followupsData.upcoming || []).map(mapItem))
+        setClients((clientsResult.data as ClientItem[]) || [])
+        setMonthSalesCount(salesResult.count ?? 0)
+        setVisibleCount(CARDS_PER_PAGE)
+        setLoading(false)
       } catch (error) {
         console.error("ERROR GENERAL DASHBOARD:", error)
         if (isMounted) setLoading(false)
@@ -216,24 +191,20 @@ export default function Dashboard() {
     }
   }, [router])
 
+  // Stats computed from local data
   const stats = useMemo(() => {
-    const totalClients = clients.length
-    const pendingFollowups =
-      todayFollowups.length +
-      overdueFollowups.length +
-      upcomingFollowups.length
-    const clientsWithPhone = clients.filter((c) => (c.phone || "").trim() !== "").length
-
+    const total    = clients.length
+    const customers = clients.filter((c) => c.status === "customer").length
+    const convPct  = total > 0 ? Math.round((customers / total) * 100) : 0
     return {
-      totalClients,
-      pendingFollowups,
-      clientsWithPhone,
+      msgs:    overdueFollowups.length,
+      ventas:  monthSalesCount,
+      convPct,
     }
-  }, [clients, todayFollowups, overdueFollowups, upcomingFollowups])
+  }, [clients, overdueFollowups, monthSalesCount])
 
   const markAsSent = async (id: string) => {
     const supabase = createClient()
-
     const { error } = await supabase
       .from("followups")
       .update({ status: "sent" })
@@ -245,8 +216,8 @@ export default function Dashboard() {
     }
 
     setDiscardingId(null)
-    setTodayFollowups((prev) => prev.filter((f) => f.id !== id))
-    setOverdueFollowups((prev) => prev.filter((f) => f.id !== id))
+    setTodayFollowups((prev)    => prev.filter((f) => f.id !== id))
+    setOverdueFollowups((prev)  => prev.filter((f) => f.id !== id))
     setUpcomingFollowups((prev) => prev.filter((f) => f.id !== id))
   }
 
@@ -267,27 +238,12 @@ export default function Dashboard() {
           <div className="mt-3 h-4 w-80 animate-pulse rounded bg-gray-100" />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((item) => (
-            <div
-              key={item}
-              className="rounded-2xl border border-gray-200 bg-white p-5"
-            >
-              <div className="h-4 w-24 animate-pulse rounded bg-gray-100" />
-              <div className="mt-4 h-8 w-16 animate-pulse rounded bg-gray-200" />
-            </div>
-          ))}
-        </div>
-
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="rounded-3xl border border-gray-200 bg-white p-6">
             <div className="h-5 w-40 animate-pulse rounded bg-gray-200" />
             <div className="mt-6 space-y-4">
               {[1, 2].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-gray-100 p-5"
-                >
+                <div key={item} className="rounded-2xl border border-gray-100 p-5">
                   <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
                   <div className="mt-3 h-3 w-24 animate-pulse rounded bg-gray-100" />
                   <div className="mt-4 h-16 animate-pulse rounded bg-gray-50" />
@@ -300,10 +256,7 @@ export default function Dashboard() {
             <div className="h-5 w-40 animate-pulse rounded bg-gray-200" />
             <div className="mt-6 space-y-4">
               {[1, 2, 3].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-gray-100 p-4"
-                >
+                <div key={item} className="rounded-2xl border border-gray-100 p-4">
                   <div className="h-4 w-36 animate-pulse rounded bg-gray-200" />
                   <div className="mt-3 h-3 w-24 animate-pulse rounded bg-gray-100" />
                 </div>
@@ -321,7 +274,6 @@ export default function Dashboard() {
   const visibleFollowups = priorityFollowups.slice(0, visibleCount)
   const hasMore = priorityFollowups.length > visibleCount
 
-  // Grammatically correct counter in Spanish
   const counterText =
     totalToday === 1
       ? "Tienes 1 cliente para contactar hoy"
@@ -329,10 +281,11 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
+
+      {/* ── Hero banner ── */}
       <section className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-          {/* LEFT: bienvenida */}
           <div>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">
               Bienvenida, {profile?.first_name || "Consultora"}
@@ -342,33 +295,23 @@ export default function Dashboard() {
             </p>
           </div>
 
-          {/* RIGHT: métricas + botón */}
           <div className="flex items-center gap-4">
 
-            {metrics && (
-              <div className="flex items-center gap-4 rounded-xl bg-gray-50 px-4 py-2">
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {metrics.sent_followups}
-                  </p>
-                  <p className="text-[11px] text-gray-500">Msgs</p>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {metrics.converted_sales}
-                  </p>
-                  <p className="text-[11px] text-gray-500">Ventas</p>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-[#E75480]">
-                    {metrics.conversion_rate}%
-                  </p>
-                  <p className="text-[11px] text-gray-500">Conv.</p>
-                </div>
+            {/* Inline stats */}
+            <div className="flex items-center gap-4 rounded-xl bg-gray-50 px-4 py-2">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-900">{stats.msgs}</p>
+                <p className="text-[11px] text-gray-500">Msgs</p>
               </div>
-            )}
+              <div className="text-center">
+                <p className="text-sm font-semibold text-gray-900">{stats.ventas}</p>
+                <p className="text-[11px] text-gray-500">Ventas</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-[#E75480]">{stats.convPct}%</p>
+                <p className="text-[11px] text-gray-500">Conv.</p>
+              </div>
+            </div>
 
             <button
               onClick={() => router.push("/clients/new")}
@@ -378,13 +321,14 @@ export default function Dashboard() {
             </button>
 
           </div>
-
         </div>
       </section>
 
+      {/* ── Two-column grid ── */}
       <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+
+        {/* ── Left: followups ── */}
         <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
-          {/* Section header */}
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
@@ -402,26 +346,21 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Counter banner */}
-          {totalToday > 0 ? (
+          {totalToday > 0 && (
             <div className="mt-4 rounded-xl bg-pink-50 px-4 py-2.5">
               <p className="text-sm font-medium text-[#E75480]">{counterText}</p>
             </div>
-          ) : null}
+          )}
 
-          {/* Card list */}
           <div className="mt-5 space-y-3">
             {priorityFollowups.length === 0 ? (
-              /* ── Empty state ── */
               <div className="flex flex-col items-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-pink-100">
                   <svg className="h-6 w-6 text-[#E75480]" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <p className="mt-3 text-sm font-semibold text-gray-800">
-                  ¡Todo al día!
-                </p>
+                <p className="mt-3 text-sm font-semibold text-gray-800">¡Todo al día!</p>
                 <p className="mt-1 text-sm text-gray-500">
                   No tienes seguimientos pendientes para hoy.
                 </p>
@@ -429,8 +368,8 @@ export default function Dashboard() {
             ) : (
               <>
                 {visibleFollowups.map((f) => {
-                  const message = editedMessages[f.id] ?? f.mensaje ?? ""
-                  const isExpanded = expandedCards.has(f.id)
+                  const message     = editedMessages[f.id] ?? f.mensaje ?? ""
+                  const isExpanded  = expandedCards.has(f.id)
                   const isDiscarting = discardingId === f.id
 
                   const d = new Date(f.scheduled_date)
@@ -448,7 +387,7 @@ export default function Dashboard() {
                           : "border-gray-200 bg-white hover:border-gray-300"
                       }`}
                     >
-                      {/* ── Row 1: name + badges ── */}
+                      {/* Row 1: name + badges + phone */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-base font-bold text-gray-900">
@@ -473,7 +412,7 @@ export default function Dashboard() {
                         </span>
                       </div>
 
-                      {/* ── Row 2: message preview / editable textarea ── */}
+                      {/* Row 2: message / textarea */}
                       {isExpanded ? (
                         <textarea
                           value={message}
@@ -484,11 +423,13 @@ export default function Dashboard() {
                             }))
                           }
                           rows={4}
-                          className="mt-3 w-full rounded-xl bg-gray-50 p-3 text-sm leading-6 text-gray-700 resize-none border border-[#E75480] focus:outline-none"
+                          className="mt-3 w-full resize-none rounded-xl border border-[#E75480] bg-gray-50 p-3 text-sm leading-6 text-gray-700 focus:outline-none"
                         />
                       ) : (
                         <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-gray-600">
-                          {message || <span className="italic text-gray-400">Sin mensaje</span>}
+                          {message || (
+                            <span className="italic text-gray-400">Sin mensaje</span>
+                          )}
                         </p>
                       )}
 
@@ -499,9 +440,8 @@ export default function Dashboard() {
                         {isExpanded ? "Cerrar" : "Editar mensaje"}
                       </button>
 
-                      {/* ── Row 3: actions ── */}
+                      {/* Row 3: actions */}
                       <div className="mt-3 flex items-center gap-2">
-                        {/* Primary — Enviar */}
                         <button
                           onClick={() => {
                             localStorage.setItem("source_followup_id", f.id)
@@ -512,7 +452,6 @@ export default function Dashboard() {
                           Enviar por WhatsApp
                         </button>
 
-                        {/* Ghost — Descartar with inline confirmation */}
                         {isDiscarting ? (
                           <div className="flex shrink-0 items-center gap-1.5">
                             <button
@@ -541,7 +480,6 @@ export default function Dashboard() {
                   )
                 })}
 
-                {/* ── Pagination: Ver más ── */}
                 {hasMore && (
                   <button
                     onClick={() => setVisibleCount((n) => n + CARDS_PER_PAGE)}
@@ -555,6 +493,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ── Right: recent clients ── */}
         <div className="space-y-6">
           <div className="rounded-[28px] border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between">
@@ -587,47 +526,42 @@ export default function Dashboard() {
                   </p>
                 </div>
               ) : (
-                clients.slice(0, 6).map((c) => (
+                clients.slice(0, 5).map((c) => (
                   <button
                     key={c.id}
                     onClick={() => router.push(`/clients/${c.id}`)}
                     className="block w-full rounded-2xl border border-gray-200 p-4 text-left transition hover:border-gray-300 hover:bg-gray-50"
                   >
                     <div className="flex items-start justify-between gap-3">
-
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-gray-900">
                           {c.name}
                         </p>
-
                         <p className="mt-1 text-sm text-gray-500">
                           {formatPhone(c.phone)}
                         </p>
-
                         <span
-                          className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full ${c.status === "customer"
+                          className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium ${
+                            c.status === "customer"
                               ? "bg-pink-100 text-[#E75480]"
                               : c.status === "later"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-gray-100 text-gray-600"
-                            }`}
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-600"
+                          }`}
                         >
                           {c.status === "customer"
                             ? "Cliente"
                             : c.status === "later"
-                              ? "Más adelante"
-                              : "Prospecto"}
+                            ? "Más adelante"
+                            : "Prospecto"}
                         </span>
                       </div>
 
-                      <div className="flex flex-col items-end gap-2">
-                        {c.skin_type && (
-                          <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
-                            {c.skin_type}
-                          </span>
-                        )}
-                      </div>
-
+                      {c.skin_type && (
+                        <span className="shrink-0 rounded-full bg-pink-50 px-2.5 py-1 text-xs font-medium text-[#E75480]">
+                          {c.skin_type}
+                        </span>
+                      )}
                     </div>
                   </button>
                 ))
@@ -636,6 +570,7 @@ export default function Dashboard() {
           </div>
         </div>
       </section>
+
       <div className="fixed bottom-2 right-4 text-xs text-gray-400">
         v{APP_VERSION}
       </div>
