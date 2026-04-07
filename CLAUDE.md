@@ -44,21 +44,29 @@ No test suite exists yet.
 
 ### Backend Structure
 
-All logic lives in `backend/app/main.py` (single-file FastAPI app):
-- `/api/clients` — CRUD for clients (skin type, status: prospect/customer/later)
-- `/api/sales` — create sales with items; auto-generates followups; transitions prospect→customer
-- `/api/followups` — list/complete/mark-sent; categorized as overdue/today/upcoming
-- `/api/metrics` — followup send rate and conversion tracking
+All logic lives in `backend/app/main.py` (single-file FastAPI app). Routes have **no `/api/` prefix**:
+- `GET/POST /clients` — CRUD for clients (skin type, status: prospect/customer/later)
+- `POST /sales` — create sales with items; auto-generates followups; transitions prospect→customer
+- `GET /followups` — list pending followups; categorized as overdue/today/upcoming
+- `POST /followups/{id}/complete` — mark followup as sent
+- `GET /metrics/followups` — followup send rate and conversion tracking
 
 `backend/app/db.py` — Supabase client using service key (bypasses RLS)
 `backend/app/config.py` — loads env vars
 
+### Mixed Data Access Pattern
+
+Most data mutations go through FastAPI, but some reads query Supabase directly from the frontend:
+- **Via FastAPI** (`lib/api.ts`): `createClient`, `getClients`, `createSale`, `getFollowups`, `completeFollowup`
+- **Via Supabase directly**: client profile page (`/clients/[id]`) fetches client details and full sales history with joined `sale_items` and `products`
+
 ### Key Domain Concepts
 
-- **Followups:** Auto-scheduled at 2 days, 2 weeks, and 2 months after a sale. Each has a type (`2_days`, `2_weeks`, `2_months`), status, and message template. Templates are backend-driven and editable by the user before sending.
+- **Followups:** Auto-scheduled at 2 days, 2 weeks, and 2 months after a sale. Followup `type` values are `day2`, `week2`, `month2`. Message templates are generated in the backend's `generate_message()` function.
 - **Client status:** `prospect` → `customer` automatically when first sale is recorded. Also `later` for deferred prospects.
 - **Followup toggle:** Per-client `followup_enabled` flag controls whether the 2+2+2 schedule is created.
 - **Timezone:** All scheduled dates use America/Santo_Domingo timezone.
+- **Products table:** Referenced in `sale_items` joins; managed directly in Supabase (no backend CRUD endpoint).
 
 ### Styling Conventions
 

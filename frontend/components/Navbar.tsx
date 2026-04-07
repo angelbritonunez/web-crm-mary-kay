@@ -20,7 +20,7 @@ export default function Navbar() {
         <Link href="/dashboard" className="flex items-center gap-2 group">
           <span className="text-[#E75480] text-xl">✦</span>
           <span className="font-semibold text-gray-900 group-hover:text-[#E75480] transition">
-            Mary Kay
+            GlowSuite
           </span>
         </Link>
 
