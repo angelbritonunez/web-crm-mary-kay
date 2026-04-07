@@ -57,6 +57,7 @@ export default function ClientsPage() {
 
   const getStatusUI = (status: string) => {
     if (status === "customer") {
+
       return { label: "Cliente", className: "bg-pink-100 text-[#E75480]" }
     }
 
@@ -76,6 +77,7 @@ export default function ClientsPage() {
         <button
           onClick={() => router.push("/clients/new")}
           className="bg-pink-500 text-white px-4 py-2 rounded-full text-sm"
+
         >
           Nuevo cliente
         </button>
@@ -86,7 +88,9 @@ export default function ClientsPage() {
         placeholder="Buscar cliente..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+
         className="w-full border rounded-xl px-4 py-3 mb-6 bg-white"
+
       />
 
       {loading ? (
@@ -106,6 +110,7 @@ export default function ClientsPage() {
               <div
                 key={client.id}
                 onClick={() => router.push(`/clients/${client.id}`)}
+
                 className="bg-white border rounded-xl p-4 cursor-pointer"
               >
                 <div className="flex justify-between items-start gap-3">
@@ -116,10 +121,12 @@ export default function ClientsPage() {
                       {formatPhone(client.phone)}
                     </p>
 
+
                     <span className={`inline-block mt-2 text-xs px-2.5 py-1 rounded-full ${statusUI.className}`}>
                       {statusUI.label}
                     </span>
                   </div>
+
 
                   {client.skin_type && (
                     <span className="rounded-full bg-pink-50 px-2.5 py-1 text-xs text-[#E75480]">
