@@ -3,111 +3,109 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react"
+import AuthCard from "@/components/ui/AuthCard"
+import AuthInput from "@/components/ui/AuthInput"
+import AuthButton from "@/components/ui/AuthButton"
 
 export default function LoginPage() {
   const supabase = createClient()
+  const router = useRouter()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
-
-  const router = useRouter()
+  const [error, setError] = useState("")
 
   const handleLogin = async () => {
     setLoading(true)
+    setError("")
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     setLoading(false)
 
     if (error) {
-      alert(error.message)
+      setError(error.message)
     } else {
       router.push("/dashboard")
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      
-      <div className="bg-white p-10 rounded-2xl shadow-lg border w-full max-w-lg">
-        
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <div className="text-pink-400 text-3xl">🌸</div>
+    <AuthCard
+      icon={<Sparkles size={32} color="white" />}
+      title="GlowSuite"
+      subtitle="Tu negocio, organizado."
+      caption="Para consultoras independientes"
+    >
+      <div className="w-full max-w-sm mx-auto flex flex-col gap-5">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">Bienvenida de nuevo</h2>
+          <p className="text-sm text-gray-500 mt-1 mb-6">Ingresa tus datos para continuar</p>
         </div>
 
-        {/* Title */}
-        <h2 className="text-center text-3xl font-semibold text-gray-700 mb-8">
+        <AuthInput
+          label="Correo electrónico"
+          type="email"
+          placeholder="ejemplo@correo.com"
+          value={email}
+          onChange={setEmail}
+          leftIcon={<Mail size={16} />}
+        />
+
+        <AuthInput
+          label="Contraseña"
+          type={showPassword ? "text" : "password"}
+          placeholder="••••••••"
+          value={password}
+          onChange={setPassword}
+          leftIcon={<Lock size={16} />}
+          rightIcon={
+            <span onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          }
+        />
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="cursor-pointer"
+          />
+          <label htmlFor="rememberMe" className="text-sm text-gray-500 cursor-pointer">
+            Recordarme
+          </label>
+        </div>
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+        <AuthButton onClick={handleLogin} loading={loading}>
           Iniciar sesión
-        </h2>
+        </AuthButton>
 
-        {/* Email */}
-        <div className="mb-6">
-          <label className="block text-sm text-gray-600 mb-2">
-            Correo electrónico
-          </label>
-          <input
-            type="email"
-            placeholder="ejemplo@correo.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
-        </div>
+        <hr className="my-4 border-gray-200" />
 
-        {/* Password */}
-        <div className="mb-6 relative">
-          <label className="block text-sm text-gray-600 mb-2">
-            Contraseña
-          </label>
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-pink-300"
-          />
+        <p className="text-sm text-gray-400 hover:underline text-center cursor-pointer">
+          ¿Olvidaste tu contraseña?
+        </p>
 
-          <div
-            className="absolute right-4 top-[44px] cursor-pointer text-gray-400"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </div>
-        </div>
-
-        {/* Button */}
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-pink-400 hover:bg-pink-500 text-white py-3 rounded-lg font-medium transition disabled:opacity-50"
-        >
-          {loading ? "Cargando..." : "Entrar"}
-        </button>
-
-        {/* Divider */}
-        <div className="my-6 border-t border-gray-200"></div>
-
-        {/* Links */}
-        <div className="text-center text-sm">
-          <p className="text-gray-500 hover:underline cursor-pointer">
-            ¿Olvidaste tu contraseña?
-          </p>
-
-          <p
-            className="mt-2 text-gray-600 hover:underline cursor-pointer"
+        <p className="text-sm text-gray-500 text-center">
+          ¿No tienes cuenta?{" "}
+          <span
+            className="cursor-pointer hover:underline font-medium"
+            style={{ color: "#E75480" }}
             onClick={() => router.push("/register")}
           >
-            Crear cuenta
-          </p>
-        </div>
+            Crear cuenta →
+          </span>
+        </p>
       </div>
-    </div>
+    </AuthCard>
   )
 }

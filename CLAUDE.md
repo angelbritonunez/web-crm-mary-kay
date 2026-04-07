@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A full-stack CRM for Mary Kay consultants in the Dominican Republic. Spanish-language UI for tracking clients, sales, and automated followup scheduling (2-day, 2-week, 2-month cycles).
+A full-stack GlowSuite CRM for beauty consultants in the Dominican Republic. Spanish-language UI for tracking clients, sales, and automated followup scheduling (2-day, 2-week, 2-month cycles).
 
 ## Commands
 

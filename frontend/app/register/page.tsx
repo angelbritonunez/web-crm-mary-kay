@@ -3,191 +3,164 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import { Eye, EyeOff, Sparkles } from "lucide-react"
+import AuthCard from "@/components/ui/AuthCard"
+import AuthInput from "@/components/ui/AuthInput"
+import AuthButton from "@/components/ui/AuthButton"
 
 export default function RegisterPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [firstName, setFirstNombre] = useState("")
-  const [lastName, setLastNombre] = useState("")
-  const [telefono, setTelefono] = useState("")
-  const [empresa, setEmpresa] = useState("")
+  const [nombre, setNombre] = useState("")
+  const [apellido, setApellido] = useState("")
   const [email, setEmail] = useState("")
+  const [telefono, setTelefono] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
 
-  const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, "").slice(0, 10)
-
-    if (digits.length <= 3) return digits
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
-  }
-
-  const handlePhoneChange = (value: string) => {
-    setTelefono(formatPhone(value))
-  }
+  const passwordMismatch =
+    password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword
 
   const handleRegister = async () => {
-    if (!firstName || !lastName || !telefono || !empresa || !email || !password || !confirmPassword)  {
-      alert("Completa todos los campos")
+    setError("")
+
+    if (!nombre || !apellido || !email || !telefono || !password || !confirmPassword) {
+      setError("Completa todos los campos")
       return
     }
 
     if (password !== confirmPassword) {
-      alert("Las contraseñas no coinciden")
+      setError("Las contraseñas no coinciden")
       return
     }
 
     if (password.length < 6) {
-      alert("La contraseña debe tener al menos 6 caracteres")
+      setError("La contraseña debe tener al menos 6 caracteres")
       return
     }
 
     setLoading(true)
 
-    try {
-      //CREAR USUARIO
-const { error: signUpError } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-    data: {
-      first_name: firstName,
-      last_name: lastName,
-      phone: telefono,
-      empresa: empresa,
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { first_name: nombre, last_name: apellido, phone: telefono },
+      },
+    })
+
+    setLoading(false)
+
+    if (signUpError) {
+      setError(signUpError.message)
+      return
     }
-  }
-})
 
-if (signUpError) {
-  alert(signUpError.message)
-  setLoading(false)
-  return
-}
-
-      //ACTUALIZAR PROFILE 
-const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-    data: {
-      first_name: firstName,
-      last_name: lastName,
-      phone: telefono,
-      empresa: empresa,
-    }
-  }
-})
-
-      alert("Cuenta creada correctamente. Verifica tu correo.")
-      router.push("/login")
-
-    } catch (err) {
-      alert("Ocurrió un error al crear la cuenta")
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    setSuccess(true)
+    setTimeout(() => router.push("/login"), 3000)
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-4">
-      <div className="w-full max-w-[480px] rounded-2xl border border-gray-200 bg-white px-8 py-10 shadow-sm">
-
-        {/* LOGO */}
-        <div className="flex justify-center mb-4">
-          <div className="text-[36px] text-[#E75480]">◈</div>
+    <AuthCard
+      icon={<Sparkles size={32} color="white" />}
+      title="GlowSuite"
+      subtitle="Empieza a crecer hoy."
+      caption="Crea tu cuenta gratis"
+    >
+      <div className="w-full max-w-sm mx-auto flex flex-col gap-5">
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-800">Crear cuenta</h2>
+          <p className="text-sm text-gray-500 mt-1 mb-6">Completa tus datos para empezar</p>
         </div>
 
-        {/* TITLE */}
-        <h1 className="text-center text-[26px] font-semibold text-gray-900 mb-6">
+        <div className="grid grid-cols-2 gap-4">
+          <AuthInput
+            label="Nombre"
+            type="text"
+            placeholder="Ana"
+            value={nombre}
+            onChange={setNombre}
+          />
+          <AuthInput
+            label="Apellido"
+            type="text"
+            placeholder="García"
+            value={apellido}
+            onChange={setApellido}
+          />
+        </div>
+
+        <AuthInput
+          label="Correo electrónico"
+          type="email"
+          placeholder="ejemplo@correo.com"
+          value={email}
+          onChange={setEmail}
+        />
+
+        <AuthInput
+          label="Teléfono"
+          type="tel"
+          placeholder="809-000-0000"
+          value={telefono}
+          onChange={setTelefono}
+        />
+
+        <AuthInput
+          label="Contraseña"
+          type={showPassword ? "text" : "password"}
+          placeholder="••••••••"
+          value={password}
+          onChange={setPassword}
+          rightIcon={
+            <span onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          }
+        />
+
+        <AuthInput
+          label="Confirmar contraseña"
+          type={showConfirmPassword ? "text" : "password"}
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          error={passwordMismatch ? "Las contraseñas no coinciden" : undefined}
+          rightIcon={
+            <span onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          }
+        />
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {success && (
+          <p className="text-green-600 text-sm text-center">
+            Revisa tu correo para confirmar tu cuenta
+          </p>
+        )}
+
+        <AuthButton onClick={handleRegister} loading={loading} disabled={success}>
           Crear cuenta
-        </h1>
+        </AuthButton>
 
-        <div className="border-t mb-6" />
-
-        <div className="space-y-4">
-
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={firstName}
-            onChange={(e) => setFirstNombre(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-           <input
-            type="text"
-            placeholder="Apellido"
-            value={lastName}
-            onChange={(e) => setLastNombre(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-          <input
-            type="text"
-            placeholder="Teléfono"
-            value={telefono}
-            onChange={(e) => handlePhoneChange(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-          <select
-            value={empresa}
-            onChange={(e) => setEmpresa(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          >
-            <option value="">Selecciona una empresa</option>
-            <option value="Mary Kay">Mary Kay</option>
-          </select>
-
-          <input
-            type="email"
-            placeholder="Correo"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-          <input
-            type="password"
-            placeholder="Confirmar contraseña"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full h-[50px] rounded-xl border px-4 focus:outline-none focus:ring-2 focus:ring-pink-200"
-          />
-
-          <button
-            onClick={handleRegister}
-            disabled={loading}
-            className="w-full h-[50px] bg-[#E75480] text-white rounded-xl font-medium hover:opacity-90 transition"
-          >
-            {loading ? "Creando cuenta..." : "Crear cuenta"}
-          </button>
-        </div>
-
-        <div className="mt-6 text-center">
+        <p className="text-sm text-gray-500 text-center">
+          ¿Ya tienes cuenta?{" "}
           <span
+            className="cursor-pointer hover:underline font-medium"
+            style={{ color: "#E75480" }}
             onClick={() => router.push("/login")}
-            className="cursor-pointer text-[#E75480] font-medium"
           >
-            Ya tengo cuenta
+            Iniciar sesión →
           </span>
-        </div>
+        </p>
       </div>
-    </div>
+    </AuthCard>
   )
 }
