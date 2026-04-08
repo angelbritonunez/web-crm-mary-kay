@@ -195,7 +195,7 @@ export default function Dashboard() {
         const sales = (salesRes.data || []) as SaleRow[]
         const ventas_mes = sales.length
         const revenue_mes = sales.reduce(
-          (sum, s) => sum + (Number(s.total) || 0),
+          (sum: number, s) => sum + (Number(s.total) || 0),
           0
         )
 
