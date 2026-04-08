@@ -1,66 +1,161 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createSale } from "@/lib/api"
-import { createClient } from "@/lib/supabase"
-import { Eye, EyeOff } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
+import { Eye, EyeOff, Search, X } from "lucide-react"
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Product = {
+  id: string
+  name: string
+  price: number
+  category: string
+}
+
+type SelectedProduct = Product & { quantity: number }
+
+type ClientItem = {
+  id: string
+  name: string
+  phone: string
+  status: string
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatPhone(phone: string): string {
+  const digits = (phone || "").replace(/\D/g, "").slice(0, 10)
+  if (digits.length < 10) return phone || ""
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("es-DO", {
+    style: "currency",
+    currency: "DOP",
+    minimumFractionDigits: 0,
+  }).format(amount)
+}
+
+const inputClass =
+  "w-full border border-gray-200 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+
+const labelClass =
+  "block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+
+const CATEGORIES = ["Todos", "skincare", "makeup"]
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function NewSaleContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
-
   const clientIdFromURL = searchParams.get("client_id")
 
-  const [products, setProducts] = useState<any[]>([])
-  const [selectedProducts, setSelectedProducts] = useState<any[]>([])
-  const [clientId, setClientId] = useState(clientIdFromURL || "")
-
-  const [paymentType, setPaymentType] = useState("efectivo")
-  const [discount, setDiscount] = useState<number | "">("")
-
-  const [showProfit, setShowProfit] = useState(false)
-
-  const [search, setSearch] = useState("")
+  // Products
+  const [products, setProducts] = useState<Product[]>([])
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([])
+  const [productSearch, setProductSearch] = useState("")
   const [category, setCategory] = useState("Todos")
 
+  // Client autocomplete
+  const [clients, setClients] = useState<ClientItem[]>([])
+  const [clientSearch, setClientSearch] = useState("")
+  const [selectedClient, setSelectedClient] = useState<ClientItem | null>(null)
+  const [showClientDropdown, setShowClientDropdown] = useState(false)
+  const clientRef = useRef<HTMLDivElement>(null)
+
+  // Form extras
+  const [paymentType, setPaymentType] = useState("efectivo")
+  const [discount, setDiscount] = useState<number | "">("")
+  const [notes, setNotes] = useState("")
+  const [saleDate, setSaleDate] = useState(
+    new Date().toISOString().split("T")[0]
+  )
+  const [showProfit, setShowProfit] = useState(false)
+
+  // Status
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-      .format(amount)
-      .replace(/^/, "RD$")
-  }
-
+  // Load products + clients in parallel; auto-select from URL
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase.from("products").select("*")
-      setProducts(data || [])
+    const init = async () => {
+      const supabase = createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      const [productsRes, clientsRes] = await Promise.all([
+        supabase
+          .from("products")
+          .select("id, name, price, category")
+          .order("name"),
+        user
+          ? supabase
+              .from("clients")
+              .select("id, name, phone, status")
+              .eq("user_id", user.id)
+              .order("name")
+          : Promise.resolve({ data: [] }),
+      ])
+
+      const loadedProducts = (productsRes.data as Product[]) || []
+      const loadedClients = (clientsRes.data as ClientItem[]) || []
+
+      setProducts(loadedProducts)
+      setClients(loadedClients)
+
+      if (clientIdFromURL) {
+        const match = loadedClients.find((c) => c.id === clientIdFromURL)
+        if (match) {
+          setSelectedClient(match)
+          setClientSearch(match.name)
+        }
+      }
     }
-    fetchProducts()
+
+    init()
+  }, [clientIdFromURL])
+
+  // Close client dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (clientRef.current && !clientRef.current.contains(e.target as Node)) {
+        setShowClientDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
   }, [])
 
+  // Filtered lists
   const filteredProducts = products.filter((p) => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase())
-    const matchCategory =
-      category === "Todos" || p.category === category
-    return matchSearch && matchCategory
+    const matchSearch = p.name
+      .toLowerCase()
+      .includes(productSearch.toLowerCase())
+    const matchCat = category === "Todos" || p.category === category
+    return matchSearch && matchCat
   })
 
-  const addProduct = (product: any) => {
-    const exists = selectedProducts.find((p) => p.id === product.id)
+  const filteredClients = clients.filter((c) => {
+    const q = clientSearch.toLowerCase()
+    return (
+      c.name.toLowerCase().includes(q) ||
+      (c.phone || "").includes(clientSearch)
+    )
+  })
 
+  // Product handlers
+  const addProduct = (product: Product) => {
+    const exists = selectedProducts.find((p) => p.id === product.id)
     if (exists) {
       setSelectedProducts(
         selectedProducts.map((p) =>
-          p.id === product.id
-            ? { ...p, quantity: p.quantity + 1 }
-            : p
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
         )
       )
     } else {
@@ -68,62 +163,50 @@ export default function NewSaleContent() {
     }
   }
 
-  const isSelected = (id: string) => {
-    return selectedProducts.some((p) => p.id === id)
-  }
-
-  const getQuantity = (id: string) => {
-    const p = selectedProducts.find((p) => p.id === id)
-    return p?.quantity || 0
-  }
-
   const updateQuantity = (id: string, qty: number) => {
     if (qty <= 0) {
       setSelectedProducts(selectedProducts.filter((p) => p.id !== id))
       return
     }
-
     setSelectedProducts(
-      selectedProducts.map((p) =>
-        p.id === id ? { ...p, quantity: qty } : p
-      )
+      selectedProducts.map((p) => (p.id === id ? { ...p, quantity: qty } : p))
     )
   }
 
+  const isSelected = (id: string) => selectedProducts.some((p) => p.id === id)
+  const getQuantity = (id: string) =>
+    selectedProducts.find((p) => p.id === id)?.quantity || 0
+
+  // Totals
   const subtotal = selectedProducts.reduce(
     (acc, p) => acc + p.price * p.quantity,
     0
   )
-
   const discountValue = Math.min(50, Number(discount) || 0)
+  const total = Math.max(0, subtotal - (subtotal * discountValue) / 100)
+  const profit = total - subtotal * 0.5
 
-  // ✅ FIX TOTAL (nunca negativo)
-  const total = Math.max(
-    0,
-    subtotal - (subtotal * discountValue) / 100
-  )
-
-  // COSTO (50%)
-const cost = subtotal * 0.5
-
-// UTILIDAD
-const profit = total - cost
-
-  const handleSubmit = async (e: any) => {
-    const sourceFollowupId = localStorage.getItem("source_followup_id")
+  // Submit
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!selectedClient) {
+      setError("Selecciona un cliente antes de guardar.")
+      return
+    }
+    if (selectedProducts.length === 0) {
+      setError("Agrega al menos un producto.")
+      return
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      if (!clientId) {
-        setError("Debe seleccionar un cliente")
-        setLoading(false)
-        return
-      }
+      const sourceFollowupId = localStorage.getItem("source_followup_id")
 
-      const payload = {
-        client_id: clientId,
+      await createSale({
+        client_id: selectedClient.id,
         total,
         discount: discountValue,
         payment_type: paymentType,
@@ -133,244 +216,500 @@ const profit = total - cost
           quantity: p.quantity,
           price: p.price,
         })),
-      }
+      })
 
-      await createSale(payload)
       localStorage.removeItem("source_followup_id")
-
-      router.push(`/clients/${clientId}`)
-
-    } catch (err: any) {
+      router.push(`/clients/${selectedClient.id}`)
+    } catch (err) {
       console.error(err)
-      setError("Error registrando la venta.")
+      setError("No se pudo guardar la venta. Intenta de nuevo.")
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto">
+  const canSubmit = !!selectedClient && selectedProducts.length > 0
 
-      <h1 className="text-2xl font-semibold mb-1">Nueva venta</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Selecciona los productos y completa el resumen
-      </p>
+  return (
+    <div className="space-y-4">
+
+      {/* ── Header ── */}
+      <div className="bg-white rounded-2xl border border-gray-100 px-6 py-5 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 tracking-tight">
+            Nueva venta
+          </h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Selecciona el cliente y los productos para registrar la venta.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard")}
+          className="bg-white border border-gray-200 text-gray-600 rounded-lg px-4 py-2 text-sm font-medium hover:bg-gray-50 transition"
+        >
+          ← Volver
+        </button>
+      </div>
 
       {error && (
-        <div className="mb-4 text-sm text-red-500">{error}</div>
+        <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg px-4 py-3">
+          {error}
+        </div>
       )}
 
-      <div className="relative mb-6">
-        <input
-          placeholder="Buscar productos..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 rounded-full border bg-white text-sm shadow-sm focus:outline-none"
-        />
-        <span className="absolute left-4 top-3 text-gray-400">🔍</span>
-      </div>
+      {/* ── Two-column form ── */}
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-[1fr_300px] gap-5 items-start">
 
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {["Todos", "skincare", "makeup"].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setCategory(cat)}
-            className={`px-4 py-2 rounded-full text-sm border ${
-              category === cat
-                ? "bg-[#E75480] text-white border-[#E75480]"
-                : "bg-white text-gray-600"
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+          {/* ── Left: form sections ── */}
+          <div className="space-y-4">
 
-      <div className="grid grid-cols-12 gap-8">
+            {/* Section 1 — Cliente */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-visible">
+              <div className="border-b border-gray-50 px-5 py-4">
+                <span className="text-sm font-semibold text-gray-800">
+                  Cliente
+                </span>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Busca por nombre o número de teléfono
+                </p>
+              </div>
 
-        <div className="col-span-8">
-          <div className="grid grid-cols-3 gap-5">
-
-            {filteredProducts.map((p) => {
-              const selected = isSelected(p.id)
-              const qty = getQuantity(p.id)
-
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => addProduct(p)}
-                  className={`p-5 rounded-2xl border transition cursor-pointer ${
-                    selected
-                      ? "border-[#E75480] bg-[#FDE7EF]"
-                      : "bg-white hover:shadow-sm"
-                  }`}
-                >
-                  <span className="text-[10px] uppercase text-gray-400 tracking-wide">
-                    {p.category}
-                  </span>
-
-                  <p className="font-semibold text-sm mt-2">{p.name}</p>
-
-                  <p className="text-sm text-gray-500 mt-1 mb-4">
-                    {formatCurrency(p.price)}
-                  </p>
-
-                  {!selected ? (
-                    <button className="text-xs border rounded-full px-4 py-1">
-                      + Agregar
+              <div className="p-5">
+                {selectedClient ? (
+                  <div className="flex items-center justify-between bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {selectedClient.name}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {formatPhone(selectedClient.phone)}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedClient(null)
+                        setClientSearch("")
+                      }}
+                      className="text-gray-300 hover:text-gray-500 transition"
+                    >
+                      <X size={16} />
                     </button>
-                  ) : (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-[#E75480]">✔ Agregado</span>
+                  </div>
+                ) : (
+                  <div className="relative" ref={clientRef}>
+                    <div className="relative">
+                      <Search
+                        size={14}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Buscar cliente..."
+                        value={clientSearch}
+                        onChange={(e) => {
+                          setClientSearch(e.target.value)
+                          setShowClientDropdown(true)
+                        }}
+                        onFocus={() => setShowClientDropdown(true)}
+                        className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+                      />
+                    </div>
 
-                      <div
-                        className="flex items-center gap-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <button onClick={() => updateQuantity(p.id, qty - 1)}>-</button>
-                        <span>{qty}</span>
-                        <button onClick={() => updateQuantity(p.id, qty + 1)}>+</button>
+                    {showClientDropdown && (
+                      <div className="absolute top-full left-0 right-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 max-h-52 overflow-y-auto">
+                        {filteredClients.length === 0 ? (
+                          <div className="px-4 py-3 text-sm text-gray-400">
+                            No se encontraron clientes
+                          </div>
+                        ) : (
+                          filteredClients.map((c) => (
+                            <div
+                              key={c.id}
+                              onClick={() => {
+                                setSelectedClient(c)
+                                setClientSearch(c.name)
+                                setShowClientDropdown(false)
+                              }}
+                              className="px-4 py-3 hover:bg-gray-50 cursor-pointer flex items-center justify-between border-b border-gray-50 last:border-0"
+                            >
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">
+                                  {c.name}
+                                </p>
+                                <p className="text-xs text-gray-400">
+                                  {formatPhone(c.phone)}
+                                </p>
+                              </div>
+                              <span
+                                className={`rounded-full text-xs font-medium px-2.5 py-0.5 ${
+                                  c.status === "customer"
+                                    ? "bg-[#FFF0F4] text-[#C0395E]"
+                                    : c.status === "later"
+                                    ? "bg-yellow-50 text-yellow-700"
+                                    : "bg-gray-100 text-gray-500"
+                                }`}
+                              >
+                                {c.status === "customer"
+                                  ? "Cliente"
+                                  : c.status === "later"
+                                  ? "Más adelante"
+                                  : "Prospecto"}
+                              </span>
+                            </div>
+                          ))
+                        )}
                       </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Section 2 — Productos */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="border-b border-gray-50 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-semibold text-gray-800">
+                      Productos
+                    </span>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Haz clic para agregar productos a la venta
+                    </p>
+                  </div>
+                  {selectedProducts.length > 0 && (
+                    <span className="bg-[#E75480] text-white rounded-full text-xs font-semibold px-2.5 py-0.5">
+                      {selectedProducts.reduce((a, p) => a + p.quantity, 0)}{" "}
+                      items
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4 space-y-3">
+                {/* Search + category pills */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="relative flex-1 min-w-0">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Buscar producto..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+                    />
+                  </div>
+                  <div className="flex gap-1.5">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setCategory(cat)}
+                        className={`rounded-full text-xs font-medium px-3 py-1.5 border transition ${
+                          category === cat
+                            ? "bg-[#E75480] text-white border-[#E75480]"
+                            : "bg-white text-gray-500 border-gray-200 hover:border-[#E75480] hover:text-[#E75480]"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Product grid */}
+                <div className="max-h-72 overflow-y-auto">
+                  {filteredProducts.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-gray-400">
+                      No se encontraron productos
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2.5 pr-1">
+                      {filteredProducts.map((p) => {
+                        const selected = isSelected(p.id)
+                        const qty = getQuantity(p.id)
+
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => addProduct(p)}
+                            className={`rounded-xl border p-3.5 cursor-pointer transition ${
+                              selected
+                                ? "border-[#E75480] bg-[#FFF0F4]"
+                                : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50"
+                            }`}
+                          >
+                            <span className="text-[10px] uppercase tracking-wider text-gray-300 font-medium">
+                              {p.category}
+                            </span>
+                            <p className="text-sm font-semibold text-gray-800 mt-1 leading-tight">
+                              {p.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {formatCurrency(p.price)}
+                            </p>
+
+                            {selected ? (
+                              <div
+                                className="flex items-center justify-between mt-3"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-xs font-medium text-[#C0395E]">
+                                  ✓ Agregado
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateQuantity(p.id, qty - 1)
+                                    }
+                                    className="w-6 h-6 rounded-full border border-gray-200 text-gray-500 text-xs flex items-center justify-center hover:border-[#E75480] hover:text-[#E75480] transition"
+                                  >
+                                    −
+                                  </button>
+                                  <span className="text-sm font-semibold text-gray-700 w-4 text-center">
+                                    {qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateQuantity(p.id, qty + 1)
+                                    }
+                                    className="w-6 h-6 rounded-full border border-gray-200 text-gray-500 text-xs flex items-center justify-center hover:border-[#E75480] hover:text-[#E75480] transition"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className="mt-3 text-xs border border-gray-200 rounded-full px-3 py-1 text-gray-500 hover:border-[#E75480] hover:text-[#E75480] transition"
+                              >
+                                + Agregar
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>
-              )
-            })}
+              </div>
+            </div>
 
-          </div>
-        </div>
-
-        <div className="col-span-4">
-          <div className="bg-white border rounded-2xl p-6 sticky top-6 shadow-sm">
-
-            <h2 className="font-semibold mb-4">Resumen</h2>
-
-            {selectedProducts.length === 0 && (
-              <p className="text-sm text-gray-400">No hay productos agregados</p>
-            )}
-
-            {selectedProducts.map((p) => (
-              <div key={p.id} className="flex justify-between items-center text-sm mb-3">
+            {/* Section 3 — Detalles adicionales */}
+            <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+              <div className="border-b border-gray-50 px-5 py-4">
+                <span className="text-sm font-semibold text-gray-800">
+                  Detalles adicionales
+                </span>
+              </div>
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Notas (opcional)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Observaciones sobre la venta..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent resize-none transition"
+                  />
+                </div>
                 <div>
-                  <p className="font-medium">{p.name}</p>
-                  <p className="text-xs text-gray-400">
-                    {formatCurrency(p.price)}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(p.id, p.quantity - 1)}>-</button>
-                  <span>{p.quantity}</span>
-                  <button onClick={() => updateQuantity(p.id, p.quantity + 1)}>+</button>
+                  <label className={labelClass}>Fecha de venta</label>
+                  <input
+                    type="date"
+                    value={saleDate}
+                    onChange={(e) => setSaleDate(e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
               </div>
-            ))}
-
-            {/* 🔥 DESCUENTO FIX */}
-            <div className="mt-6">
-              <label className="text-sm text-gray-500">
-                Descuento (%)
-              </label>
-
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                max={50}
-                step={1}
-                value={discount}
-                onChange={(e) => {
-                  let value = e.target.value
-
-                  if (value === "") {
-                    setDiscount("")
-                    return
-                  }
-
-                  let num = Number(value)
-
-                  if (num < 0) num = 0
-                  if (num > 50) num = 50
-
-                  setDiscount(num)
-                }}
-                className="w-full mt-1 border rounded-lg px-3 py-2 text-sm"
-                placeholder="0"
-              />
             </div>
-
-            <div className="mt-4">
-              <label className="text-sm text-gray-500">Método de pago</label>
-
-              <div className="flex mt-2 bg-gray-100 rounded-xl p-1">
-                {["efectivo", "transferencia"].map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setPaymentType(type)}
-                    className={`flex-1 py-2 text-sm rounded-lg ${
-                      paymentType === type
-                        ? "bg-white shadow text-[#E75480]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 border-t pt-4">
-              <div className="flex justify-between text-sm text-gray-500">
-                <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm mt-2">
-  <span className="text-gray-500">Utilidad</span>
-
-  <div className="flex items-center gap-2">
-    <span
-      className={`font-medium ${
-        profit > 0 ? "text-green-600" : "text-red-500"
-      }`}
-    >
-      {showProfit ? formatCurrency(profit) : "••••••"}
-    </span>
-
-    <button
-      type="button"
-      onClick={() => setShowProfit(!showProfit)}
-      className="text-gray-400 hover:text-[#E75480] transition"
-      title="Mostrar / ocultar utilidad"
-    >
-      {showProfit ? <EyeOff size={20} /> : <Eye size={20} />}
-    </button>
-  </div>
-</div>
-
-{showProfit && profit === 0 && (
-  <p className="text-xs text-red-500 mt-1 text-right pr-6">
-    ⚠ Sin ganancia en esta venta
-  </p>
-)}
-
-              <div className="flex justify-between text-lg font-semibold mt-2">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleSubmit}
-              disabled={loading || selectedProducts.length === 0}
-              className="w-full mt-6 bg-[#E75480] text-white py-3 rounded-xl font-medium shadow-md hover:opacity-90"
-            >
-              {loading ? "Procesando..." : "Guardar venta"}
-            </button>
 
           </div>
-        </div>
 
-      </div>
+          {/* ── Right: sticky summary ── */}
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden sticky top-20">
+            <div className="border-b border-gray-50 px-5 py-4">
+              <span className="text-sm font-semibold text-gray-800">
+                Resumen
+              </span>
+            </div>
+
+            <div className="p-5 space-y-4">
+
+              {/* Selected products mini-list */}
+              <div className="space-y-2 min-h-[48px]">
+                {selectedProducts.length === 0 ? (
+                  <p className="text-xs text-gray-300 text-center py-2">
+                    Aún no has agregado productos
+                  </p>
+                ) : (
+                  selectedProducts.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between gap-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-700 truncate">
+                          {p.name}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          {formatCurrency(p.price)} × {p.quantity}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(p.id, p.quantity - 1)}
+                          className="w-5 h-5 rounded-full border border-gray-200 text-gray-400 text-xs flex items-center justify-center hover:border-[#E75480] hover:text-[#E75480] transition"
+                        >
+                          −
+                        </button>
+                        <span className="text-xs font-semibold text-gray-700 w-4 text-center">
+                          {p.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(p.id, p.quantity + 1)}
+                          className="w-5 h-5 rounded-full border border-gray-200 text-gray-400 text-xs flex items-center justify-center hover:border-[#E75480] hover:text-[#E75480] transition"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="text-xs font-semibold text-gray-700 shrink-0 w-16 text-right">
+                        {formatCurrency(p.price * p.quantity)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Discount */}
+              <div>
+                <label className={labelClass}>Descuento (%)</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={50}
+                  value={discount}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === "") {
+                      setDiscount("")
+                      return
+                    }
+                    let n = Number(v)
+                    if (n < 0) n = 0
+                    if (n > 50) n = 50
+                    setDiscount(n)
+                  }}
+                  placeholder="0"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Payment type */}
+              <div>
+                <label className={labelClass}>Método de pago</label>
+                <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+                  {["efectivo", "transferencia"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setPaymentType(type)}
+                      className={`flex-1 py-2 text-xs font-medium rounded-lg capitalize transition ${
+                        paymentType === type
+                          ? "bg-white shadow-sm text-[#E75480]"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t border-gray-50 pt-4 space-y-2">
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(subtotal)}</span>
+                </div>
+
+                {discountValue > 0 && (
+                  <div className="flex justify-between text-xs text-[#C0395E]">
+                    <span>Descuento {discountValue}%</span>
+                    <span>
+                      −{formatCurrency((subtotal * discountValue) / 100)}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-xs text-gray-400">
+                  <span>Utilidad est.</span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`font-medium ${
+                        profit > 0 ? "text-green-600" : "text-red-500"
+                      }`}
+                    >
+                      {showProfit ? formatCurrency(profit) : "••••••"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowProfit(!showProfit)}
+                      className="text-gray-300 hover:text-[#E75480] transition"
+                    >
+                      {showProfit ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between font-semibold text-gray-800 pt-2 border-t border-gray-50">
+                  <span className="text-sm">Total</span>
+                  <span className="text-base text-[#E75480]">
+                    {formatCurrency(total)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2 pt-1">
+                <button
+                  type="submit"
+                  disabled={loading || !canSubmit}
+                  className={`w-full rounded-lg py-2.5 text-sm font-semibold text-white transition ${
+                    loading || !canSubmit
+                      ? "bg-[#E75480]/40 cursor-not-allowed"
+                      : "bg-[#E75480] hover:bg-[#d04070]"
+                  }`}
+                >
+                  {loading ? "Guardando..." : "Guardar venta"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="w-full rounded-lg py-2 text-sm font-medium text-gray-500 border border-gray-200 bg-white hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </form>
     </div>
   )
 }
