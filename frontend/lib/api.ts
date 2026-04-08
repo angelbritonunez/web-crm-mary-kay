@@ -51,6 +51,7 @@ export const createSale = async (data: {
   total: number
   discount: number
   payment_type: string
+  source_followup_id?: string | null
   items: {
     product_id: string
     quantity: number
