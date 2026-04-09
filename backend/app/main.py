@@ -135,6 +135,39 @@ def get_clients(x_user_id: Optional[str] = Header(None)):
         "data": response.data
     }
 
+@app.patch("/clients/{client_id}")
+def update_client(client_id: str, client: ClientRequest, x_user_id: Optional[str] = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing x-user-id")
+
+    # Verify ownership
+    existing = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    if client.skin_type not in VALID_SKIN_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo de piel inválido")
+
+    if client.status not in VALID_STATUS:
+        raise HTTPException(status_code=400, detail="Status inválido")
+
+    payload = client.dict()
+    res = supabase.table("clients").update(payload).eq("id", client_id).eq("user_id", x_user_id).execute()
+    return res.data
+
+@app.delete("/clients/{client_id}")
+def delete_client(client_id: str, x_user_id: Optional[str] = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=400, detail="Missing x-user-id")
+
+    # Verify ownership
+    existing = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    supabase.table("clients").delete().eq("id", client_id).eq("user_id", x_user_id).execute()
+    return {"status": "success"}
+
 # 🔥 SALES
 
 @app.post("/sales")

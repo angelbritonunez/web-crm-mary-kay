@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { addPayment } from "@/lib/api"
+import { addPayment, updateClient, deleteClient } from "@/lib/api"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -252,22 +252,15 @@ export default function ClientProfilePage() {
     setSaveError(null)
     setSaveSuccess(false)
 
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("clients")
-      .update({
+    try {
+      await updateClient(client.id, {
         name: name.trim(),
         phone: phone.replace(/\D/g, ""),
-        email: email.trim() || null,
+        email: email.trim() || undefined,
         skin_type: skinType,
         status,
         followup_enabled: followupEnabled,
       })
-      .eq("id", client.id)
-
-    if (error) {
-      setSaveError("No se pudo guardar. Intenta de nuevo.")
-    } else {
       setClient((prev) =>
         prev
           ? {
@@ -283,19 +276,22 @@ export default function ClientProfilePage() {
       )
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 2500)
+    } catch {
+      setSaveError("No se pudo guardar. Intenta de nuevo.")
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
   const handleDelete = async () => {
     if (!client) return
     setDeleting(true)
-
-    const supabase = createClient()
-    await supabase.from("clients").delete().eq("id", client.id)
-
-    router.push("/clients")
+    try {
+      await deleteClient(client.id)
+      router.push("/clients")
+    } catch {
+      setDeleting(false)
+    }
   }
 
   const tabs: { key: Tab; label: string; count?: number }[] = [

@@ -47,6 +47,30 @@ export const createClient = async (data: {
   return res.json()
 }
 
+export const updateClient = async (
+  clientId: string,
+  data: { name: string; phone: string; skin_type: string; status?: string; email?: string; followup_enabled?: boolean }
+) => {
+  const userId = await getUserId()
+  const res = await fetch(`${API_URL}/clients/${clientId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "x-user-id": userId },
+    body: JSON.stringify({ ...data, followup_enabled: data.followup_enabled ?? true }),
+  })
+  if (!res.ok) throw new Error("Error actualizando cliente")
+  return res.json()
+}
+
+export const deleteClient = async (clientId: string) => {
+  const userId = await getUserId()
+  const res = await fetch(`${API_URL}/clients/${clientId}`, {
+    method: "DELETE",
+    headers: { "x-user-id": userId },
+  })
+  if (!res.ok) throw new Error("Error eliminando cliente")
+  return res.json()
+}
+
 // SALES
 export const createSale = async (data: {
   client_id: string
