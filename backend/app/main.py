@@ -627,7 +627,7 @@ def get_dashboard(x_user_id: Optional[str] = Header(None)):
             .select("id, type, scheduled_date, status, mensaje, clients(name, phone)") \
             .eq("user_id", x_user_id) \
             .eq("status", "pending") \
-            .order("scheduled_date", ascending=True) \
+            .order("scheduled_date", desc=False) \
             .limit(50) \
             .execute()
 
