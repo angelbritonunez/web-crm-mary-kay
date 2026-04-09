@@ -168,6 +168,13 @@ def delete_client(client_id: str, x_user_id: Optional[str] = Header(None)):
     supabase.table("clients").delete().eq("id", client_id).eq("user_id", x_user_id).execute()
     return {"status": "success"}
 
+# 🔹 PRODUCTS
+
+@app.get("/products")
+def get_products():
+    res = supabase.table("products").select("id, name, price, category").order("name").execute()
+    return {"status": "success", "data": res.data}
+
 # 🔥 SALES
 
 @app.post("/sales")

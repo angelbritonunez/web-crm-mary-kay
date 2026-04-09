@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { createSale } from "@/lib/api"
-import { createClient } from "@/lib/supabase/client"
+import { createSale, getClients, getProducts } from "@/lib/api"
 import { Eye, EyeOff, Search, X } from "lucide-react"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -86,37 +85,27 @@ export default function NewSaleContent() {
   // Load products + clients in parallel; auto-select from URL
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      try {
+        const [productsRes, clientsRes] = await Promise.all([
+          getProducts(),
+          getClients(),
+        ])
 
-      const [productsRes, clientsRes] = await Promise.all([
-        supabase
-          .from("products")
-          .select("id, name, price, category")
-          .order("name"),
-        user
-          ? supabase
-              .from("clients")
-              .select("id, name, phone, status")
-              .eq("user_id", user.id)
-              .order("name")
-          : Promise.resolve({ data: [] }),
-      ])
+        const loadedProducts = (productsRes.data as Product[]) || []
+        const loadedClients = (clientsRes.data as ClientItem[]) || []
 
-      const loadedProducts = (productsRes.data as Product[]) || []
-      const loadedClients = (clientsRes.data as ClientItem[]) || []
+        setProducts(loadedProducts)
+        setClients(loadedClients)
 
-      setProducts(loadedProducts)
-      setClients(loadedClients)
-
-      if (clientIdFromURL) {
-        const match = loadedClients.find((c) => c.id === clientIdFromURL)
-        if (match) {
-          setSelectedClient(match)
-          setClientSearch(match.name)
+        if (clientIdFromURL) {
+          const match = loadedClients.find((c) => c.id === clientIdFromURL)
+          if (match) {
+            setSelectedClient(match)
+            setClientSearch(match.name)
+          }
         }
+      } catch {
+        // silently fail — form still usable without preloaded data
       }
     }
 

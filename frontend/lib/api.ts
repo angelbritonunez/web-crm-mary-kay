@@ -219,3 +219,10 @@ export const getClients = async () => {
 
   return res.json()
 }
+
+// PRODUCTS
+export const getProducts = async () => {
+  const res = await fetch(`${API_URL}/products`)
+  if (!res.ok) throw new Error("Error obteniendo productos")
+  return res.json()
+}
