@@ -211,6 +211,8 @@ export default function NewSaleContent() {
         discount: discountValue,
         payment_type: paymentType,
         source_followup_id: sourceFollowupId,
+        notes: notes.trim() || undefined,
+        sale_date: saleDate || undefined,
         items: selectedProducts.map((p) => ({
           product_id: p.id,
           quantity: p.quantity,

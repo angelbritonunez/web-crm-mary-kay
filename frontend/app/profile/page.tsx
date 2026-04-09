@@ -102,31 +102,12 @@ export default function ProfilePage() {
     msg: string
   } | null>(null)
 
-  // Business info
-  const [businessName, setBusinessName] = useState("")
-  const [originalBusiness, setOriginalBusiness] = useState({
-    businessName: "",
-  })
-  const [savingBusiness, setSavingBusiness] = useState(false)
-  const [businessStatus, setBusinessStatus] = useState<{
-    type: "error" | "success"
-    msg: string
-  } | null>(null)
-
   // Password
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [savingPassword, setSavingPassword] = useState(false)
   const [passwordStatus, setPasswordStatus] = useState<{
-    type: "error" | "success"
-    msg: string
-  } | null>(null)
-
-  // Preferences
-  const [followupReminders, setFollowupReminders] = useState(true)
-  const [savingPrefs, setSavingPrefs] = useState(false)
-  const [prefsStatus, setPrefsStatus] = useState<{
     type: "error" | "success"
     msg: string
   } | null>(null)
@@ -152,23 +133,22 @@ export default function ProfilePage() {
       setUserId(user.id)
       setEmail(user.email || "")
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("first_name, last_name, phone, business_name")
+        .select("first_name, last_name, phone")
         .eq("id", user.id)
         .maybeSingle()
+
+      if (profileError) console.error("Error cargando perfil:", profileError)
 
       const fn = profile?.first_name || ""
       const ln = profile?.last_name || ""
       const ph = profile?.phone ? formatPhoneInput(profile.phone) : ""
-      const bn = (profile as any)?.business_name || ""
 
       setFirstName(fn)
       setLastName(ln)
       setPhone(ph)
-      setBusinessName(bn)
       setOriginalInfo({ firstName: fn, lastName: ln, phone: ph })
-      setOriginalBusiness({ businessName: bn })
       setLoading(false)
     }
 
@@ -187,9 +167,6 @@ export default function ProfilePage() {
     firstName.trim() !== originalInfo.firstName.trim() ||
     lastName.trim() !== originalInfo.lastName.trim() ||
     phone.trim() !== originalInfo.phone.trim()
-
-  const businessIsDirty =
-    businessName.trim() !== originalBusiness.businessName.trim()
 
   const passwordReady =
     currentPassword.length > 0 &&
@@ -224,26 +201,6 @@ export default function ProfilePage() {
       setTimeout(() => setInfoStatus(null), 3000)
     }
     setSavingInfo(false)
-  }
-
-  const handleSaveBusiness = async () => {
-    setSavingBusiness(true)
-    setBusinessStatus(null)
-
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("profiles")
-      .update({ business_name: businessName.trim() || null } as any)
-      .eq("id", userId)
-
-    if (error) {
-      setBusinessStatus({ type: "error", msg: "No se pudo guardar. Intenta de nuevo." })
-    } else {
-      setOriginalBusiness({ businessName: businessName.trim() })
-      setBusinessStatus({ type: "success", msg: "Información del negocio actualizada." })
-      setTimeout(() => setBusinessStatus(null), 3000)
-    }
-    setSavingBusiness(false)
   }
 
   const handleSavePassword = async () => {
@@ -294,15 +251,6 @@ export default function ProfilePage() {
       setTimeout(() => setPasswordStatus(null), 3000)
     }
     setSavingPassword(false)
-  }
-
-  const handleSavePrefs = () => {
-    setSavingPrefs(true)
-    setTimeout(() => {
-      setSavingPrefs(false)
-      setPrefsStatus({ type: "success", msg: "Preferencias guardadas." })
-      setTimeout(() => setPrefsStatus(null), 3000)
-    }, 500)
   }
 
   const handleLogout = async () => {
@@ -441,38 +389,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* ── Información del negocio ── */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="border-b border-gray-50 px-5 py-4">
-            <span className="text-sm font-semibold text-gray-800">
-              Información del negocio
-            </span>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Aparece en resúmenes y reportes
-            </p>
-          </div>
-          <div className="px-5 py-5 space-y-4">
-            {businessStatus && (
-              <StatusMsg type={businessStatus.type} msg={businessStatus.msg} />
-            )}
-            <div>
-              <label className={labelClass}>Nombre del negocio</label>
-              <input
-                type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="Ej. GlowSuite Beauty"
-                className={inputClass}
-              />
-            </div>
-            <SaveButton
-              onClick={handleSaveBusiness}
-              saving={savingBusiness}
-              disabled={!businessIsDirty}
-            />
-          </div>
-        </div>
-
         {/* ── Seguridad ── */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="border-b border-gray-50 px-5 py-4">
@@ -528,64 +444,6 @@ export default function ProfilePage() {
               disabled={!passwordReady}
               label="Actualizar contraseña"
               savingLabel="Actualizando..."
-            />
-          </div>
-        </div>
-
-        {/* ── Preferencias ── */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="border-b border-gray-50 px-5 py-4">
-            <span className="text-sm font-semibold text-gray-800">
-              Preferencias de la app
-            </span>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Notificaciones y comportamiento por defecto
-            </p>
-          </div>
-          <div className="px-5 py-5 space-y-4">
-            {prefsStatus && (
-              <StatusMsg type={prefsStatus.type} msg={prefsStatus.msg} />
-            )}
-
-            <div
-              onClick={() => setFollowupReminders((v) => !v)}
-              className={`flex items-start gap-3 rounded-xl border px-4 py-3.5 cursor-pointer transition ${
-                followupReminders
-                  ? "border-[#E75480] bg-[#FFF0F4]"
-                  : "border-gray-200 bg-gray-50"
-              }`}
-            >
-              <div
-                className={`mt-0.5 w-9 h-5 rounded-full flex items-center flex-shrink-0 transition-colors ${
-                  followupReminders ? "bg-[#E75480]" : "bg-gray-200"
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${
-                    followupReminders ? "translate-x-4" : "translate-x-0.5"
-                  }`}
-                />
-              </div>
-              <div>
-                <p
-                  className={`text-sm font-medium ${
-                    followupReminders ? "text-[#C0395E]" : "text-gray-600"
-                  }`}
-                >
-                  Recordatorios de seguimiento
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Muestra alertas de seguimientos vencidos al entrar al
-                  dashboard.
-                </p>
-              </div>
-            </div>
-
-            <SaveButton
-              onClick={handleSavePrefs}
-              saving={savingPrefs}
-              disabled={false}
-              label="Guardar preferencias"
             />
           </div>
         </div>

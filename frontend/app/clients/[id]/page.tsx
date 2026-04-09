@@ -30,6 +30,8 @@ type Sale = {
   payment_type: string
   status: string
   created_at: string
+  sale_date: string | null
+  notes: string | null
   sale_items: SaleItem[]
 }
 
@@ -175,7 +177,7 @@ export default function ClientProfilePage() {
         supabase
           .from("sales")
           .select(
-            "id, total, discount, payment_type, status, created_at, sale_items(quantity, price, product:products(name))"
+            "id, total, discount, payment_type, status, created_at, sale_date, notes, sale_items(quantity, price, product:products(name))"
           )
           .eq("client_id", id)
           .order("created_at", { ascending: false }),
@@ -592,7 +594,7 @@ export default function ClientProfilePage() {
                       {/* Sale header */}
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-xs text-gray-400">
-                          {formatDate(sale.created_at)}
+                          {formatDate(sale.sale_date ?? sale.created_at)}
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-gray-100 text-gray-500">
@@ -628,6 +630,13 @@ export default function ClientProfilePage() {
                           </div>
                         ))}
                       </div>
+
+                      {/* Notes */}
+                      {sale.notes && (
+                        <p className="mt-2 text-xs text-gray-400 italic">
+                          {sale.notes}
+                        </p>
+                      )}
 
                       {/* Totals */}
                       <div className="mt-3 pt-3 border-t border-gray-50 space-y-1">
