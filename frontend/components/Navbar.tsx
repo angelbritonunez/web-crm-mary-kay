@@ -6,10 +6,11 @@ import { Sparkles } from "lucide-react"
 import UserMenu from "@/components/UserMenu"
 
 const navItems = [
-  { label: "Dashboard",     href: "/dashboard" },
-  { label: "Clientes",      href: "/clients" },
-  { label: "Ventas",        href: "/sales" },
-  { label: "Seguimientos",  href: "/followups" },
+  { label: "Dashboard",  href: "/dashboard" },
+  { label: "Clientes",   href: "/clients" },
+  { label: "Ventas",     href: "/sales" },
+  { label: "Métricas",   href: "/metrics" },
+  { label: "Seguimientos", href: "/followups" },
 ]
 
 export default function Navbar() {

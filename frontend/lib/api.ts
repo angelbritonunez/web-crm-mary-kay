@@ -118,6 +118,18 @@ export const completeFollowup = async (id: string) => {
 }
 
 
+// METRICS
+export const getMetrics = async (period: string = "month") => {
+  const userId = await getUserId()
+
+  const res = await fetch(`${API_URL}/metrics?period=${period}`, {
+    headers: { "x-user-id": userId },
+  })
+
+  if (!res.ok) throw new Error("Error obteniendo métricas")
+  return res.json()
+}
+
 export const getClients = async () => {
   const userId = await getUserId()
 
