@@ -49,6 +49,8 @@ class SaleRequest(BaseModel):
     payment_type: str
     items: List[SaleItem]
     source_followup_id: Optional[str] = None
+    notes: Optional[str] = None
+    sale_date: Optional[str] = None
 
 # 🔹 UTILIDADES
 
@@ -147,7 +149,9 @@ async def create_sale(sale: SaleRequest, request: Request):
             "discount": sale.discount,
             "payment_type": sale.payment_type,
             "status": "pendiente",
-            "source_followup_id": sale.source_followup_id
+            "source_followup_id": sale.source_followup_id,
+            "notes": sale.notes or None,
+            "sale_date": sale.sale_date or None,
         }
 
         sale_res = supabase.table("sales").insert(sale_data).execute()
