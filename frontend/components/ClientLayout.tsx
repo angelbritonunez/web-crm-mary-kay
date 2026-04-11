@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
+import type { Session } from "@supabase/supabase-js"
 import Navbar from "@/components/Navbar"
 import { getMe } from "@/lib/api"
 
@@ -60,7 +61,7 @@ export default function ClientLayout({ children }: any) {
 
     loadUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: string, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: string, session: Session | null) => {
       if (!session?.user) {
         setUser(null)
         setRole("consultora")
