@@ -1,7 +1,16 @@
+import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 TZ_RD = ZoneInfo("America/Santo_Domingo")  # UTC-4, no daylight saving
+
+
+def _parse_dt(s: str) -> datetime:
+    """Parse Supabase ISO timestamps robustly (handles Z suffix and non-6-digit fractional seconds)."""
+    s = s.replace("Z", "+00:00")
+    # Normalize fractional seconds to exactly 6 digits (Python 3.10 fromisoformat is strict)
+    s = re.sub(r"\.(\d+)", lambda m: f".{(m.group(1) + '000000')[:6]}", s)
+    return datetime.fromisoformat(s)
 
 
 def get_first_name(full_name: str) -> str:
@@ -65,7 +74,7 @@ def categorize_followups(followups: list) -> dict:
     overdue, today, upcoming = [], [], []
 
     for f in followups:
-        scheduled = datetime.fromisoformat(f["scheduled_date"])
+        scheduled = _parse_dt(f["scheduled_date"])
         if scheduled < start_today:
             overdue.append(f)
         elif start_today <= scheduled <= end_today:

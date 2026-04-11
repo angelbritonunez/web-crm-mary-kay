@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getDashboard, updateFollowup } from "@/lib/api"
+import { getDashboard } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -119,9 +119,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editText, setEditText] = useState("")
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [dismissed] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const init = async () => {
@@ -169,23 +167,6 @@ export default function Dashboard() {
   const visibleFollowups = (data?.followups || []).filter(
     (f) => !dismissed.has(f.id)
   )
-
-  const handleSaveMessage = async (id: string) => {
-    try {
-      await updateFollowup(id, { mensaje: editText })
-      setData((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          followups: prev.followups.map((f) =>
-            f.id === id ? { ...f, mensaje: editText } : f
-          ),
-        }
-      })
-    } finally {
-      setEditingId(null)
-    }
-  }
 
   if (error) {
     return (
@@ -299,20 +280,20 @@ export default function Dashboard() {
 
       {/* ── Sección 3: Alert strip ── */}
       {!loading && (data?.vencidos ?? 0) > 0 && (
-        <div className="bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-2.5 flex items-center gap-3 mb-4">
+        <Link href="/followups?tab=seguimientos" className="bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-2.5 flex items-center gap-3 hover:bg-[#FFE8EF] transition">
           <div className="w-2 h-2 rounded-full bg-[#E75480] animate-pulse flex-shrink-0" />
           <span className="text-[#C0395E] text-sm font-medium">
             Tienes {data!.vencidos} clientes para contactar hoy
           </span>
           <span className="ml-auto bg-[#E75480] text-white rounded-full text-xs font-semibold px-3 py-0.5">
-            {data!.totalPending} pendientes
+            {data!.totalPending} pendientes →
           </span>
-        </div>
+        </Link>
       )}
 
       {/* ── Sección 4: Cuentas por cobrar ── */}
       {!loading && (data?.receivables_count ?? 0) > 0 && (
-        <div className="bg-white border border-orange-100 rounded-xl px-5 py-3.5 flex items-center justify-between gap-4">
+        <Link href="/followups?tab=cobros" className="bg-white border border-orange-100 rounded-xl px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-orange-50 transition">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
             <div>
@@ -323,34 +304,29 @@ export default function Dashboard() {
             </div>
           </div>
           <span className="text-sm font-bold text-orange-500 flex-shrink-0">
-            {formatCurrency(data!.total_owed)}
+            {formatCurrency(data!.total_owed)} →
           </span>
-        </div>
+        </Link>
       )}
 
       {/* ── Sección 5: Grid principal ── */}
       <div className="grid grid-cols-[1fr_340px] gap-5 items-start">
 
-        {/* Columna izquierda — Seguimientos del día */}
+        {/* Columna izquierda — Seguimientos del día (preview) */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="border-b border-gray-50 px-5 py-4">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-sm font-semibold text-gray-800">
-                Seguimientos del día
-              </span>
-              <span className="bg-[#E75480] text-white rounded-full text-xs font-semibold px-2.5 py-0.5">
-                {loading ? "—" : visibleFollowups.length}
-              </span>
+          <div className="border-b border-gray-50 px-5 py-4 flex items-center justify-between">
+            <div>
+              <span className="text-sm font-semibold text-gray-800">Seguimientos del día</span>
+              <p className="text-xs text-gray-400 mt-0.5">Tus contactos más urgentes</p>
             </div>
-            <p className="text-xs text-gray-400">
-              Prioriza los contactos que debes atender hoy
-            </p>
+            <Link href="/followups?tab=seguimientos" className="text-xs text-[#E75480] font-medium hover:underline">
+              Ver todos →
+            </Link>
           </div>
 
-          <div className="p-4 max-h-[calc(100vh-16rem)] overflow-y-auto">
+          <div className="p-4">
             {loading ? (
               <>
-                <FollowupSkeleton />
                 <FollowupSkeleton />
                 <FollowupSkeleton />
               </>
@@ -359,141 +335,43 @@ export default function Dashboard() {
                 ¡Todo al día! No hay seguimientos pendientes.
               </div>
             ) : (
-              visibleFollowups.map((fup) => {
-                const isEditing = editingId === fup.id
-                const message = fup.mensaje || ""
-
-                const typeLabel =
-                  fup.type === "day2"
-                    ? "2 días"
-                    : fup.type === "week2"
-                    ? "2 semanas"
-                    : "2 meses"
-
-                const typeBadgeClass =
-                  fup.type === "day2"
-                    ? "bg-[#FFF0F4] text-[#C0395E]"
-                    : fup.type === "week2"
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "bg-green-50 text-green-700"
-
-                const dateFormatted = new Intl.DateTimeFormat("es-DO", {
-                  day: "2-digit",
-                  month: "short",
-                  timeZone: "America/Santo_Domingo",
-                }).format(new Date(fup.scheduled_date))
-
-                return (
-                  <div
-                    key={fup.id}
-                    className="border border-gray-100 rounded-xl p-4 mb-3 bg-white"
-                  >
-                    {/* Row 1: name + badges + phone */}
-                    <div className="flex justify-between items-start mb-2 gap-2">
-                      <div>
-                        <span className="font-semibold text-sm text-gray-800">
-                          {fup.client_name}
-                        </span>
-                        {fup.client_phone && (
-                          <span className="text-gray-400 text-xs ml-1">
-                            · {formatPhone(fup.client_phone)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-1.5 items-center flex-wrap justify-end">
-                        <span
-                          className={`rounded-full text-xs font-medium px-2.5 py-0.5 ${typeBadgeClass}`}
-                        >
-                          {typeLabel}
-                        </span>
-                        {fup.isOverdue && (
-                          <span className="bg-[#E75480] text-white rounded-full text-xs font-medium px-2.5 py-0.5">
-                            Vencido
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-300">
-                          {dateFormatted}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Row 2: message or textarea */}
-                    {isEditing ? (
-                      <>
-                        <textarea
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          className="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#E75480] resize-none min-h-16 mb-2"
-                          autoFocus
-                        />
-                        <div className="flex gap-2 mb-2">
-                          <button
-                            onClick={() => handleSaveMessage(fup.id)}
-                            className="bg-[#E75480] text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-[#d04070] transition"
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="text-gray-400 text-xs hover:text-gray-600 px-2 py-1.5"
-                          >
-                            Cancelar
-                          </button>
+              <>
+                {visibleFollowups.slice(0, 3).map((fup) => {
+                  const typeLabel = fup.type === "day2" ? "2 días" : fup.type === "week2" ? "2 semanas" : "2 meses"
+                  const typeBadgeClass = fup.type === "day2" ? "bg-[#FFF0F4] text-[#C0395E]" : fup.type === "week2" ? "bg-indigo-50 text-indigo-700" : "bg-green-50 text-green-700"
+                  const dateFormatted = new Intl.DateTimeFormat("es-DO", { day: "2-digit", month: "short", timeZone: "America/Santo_Domingo" }).format(new Date(fup.scheduled_date))
+                  return (
+                    <div key={fup.id} className="border border-gray-100 rounded-xl p-4 mb-3">
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div>
+                          <span className="font-semibold text-sm text-gray-800">{fup.client_name}</span>
+                          {fup.client_phone && <span className="text-gray-400 text-xs ml-1">· {formatPhone(fup.client_phone)}</span>}
                         </div>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-gray-500 leading-relaxed my-2">
-                          {message ? (
-                            message
-                          ) : (
-                            <span className="text-gray-300 italic">
-                              Sin mensaje — editar antes de enviar
-                            </span>
-                          )}
-                        </p>
-                        <button
-                          onClick={() => {
-                            setEditingId(fup.id)
-                            setEditText(fup.mensaje || "")
-                          }}
-                          className="text-xs text-[#E75480] font-medium hover:underline block mb-2 bg-transparent border-none p-0 cursor-pointer"
-                        >
-                          Editar mensaje
-                        </button>
-                      </>
-                    )}
-
-                    {/* Row 3: actions */}
-                    <div className="flex gap-2">
+                        <div className="flex gap-1.5 items-center flex-wrap justify-end">
+                          <span className={`rounded-full text-xs font-medium px-2.5 py-0.5 ${typeBadgeClass}`}>{typeLabel}</span>
+                          {fup.isOverdue && <span className="bg-[#E75480] text-white rounded-full text-xs font-medium px-2.5 py-0.5">Vencido</span>}
+                          <span className="text-xs text-gray-300">{dateFormatted}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed mb-3 line-clamp-2">{fup.mensaje}</p>
                       <a
-                        href={buildWAUrl(fup.client_phone, message)}
+                        href={buildWAUrl(fup.client_phone, fup.mensaje || "")}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 bg-[#E75480] text-white rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#d04070] transition"
+                        className="w-full bg-[#E75480] text-white rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-[#d04070] transition"
                       >
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                        >
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 2C6.477 2 2 6.477 2 12c0 1.989.58 3.842 1.583 5.405L2.046 22l4.729-1.518A9.956 9.956 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182a8.18 8.18 0 0 1-4.17-1.14l-.299-.177-3.093.994.957-3.026-.198-.316A8.143 8.143 0 0 1 3.818 12c0-4.511 3.671-8.182 8.182-8.182 4.51 0 8.182 3.671 8.182 8.182 0 4.51-3.671 8.182-8.182 8.182z" />
-                        </svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347zM12 2C6.477 2 2 6.477 2 12c0 1.989.58 3.842 1.583 5.405L2.046 22l4.729-1.518A9.956 9.956 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.182a8.18 8.18 0 0 1-4.17-1.14l-.299-.177-3.093.994.957-3.026-.198-.316A8.143 8.143 0 0 1 3.818 12c0-4.511 3.671-8.182 8.182-8.182 4.51 0 8.182 3.671 8.182 8.182 0 4.51-3.671 8.182-8.182 8.182z"/></svg>
                         Enviar por WhatsApp
                       </a>
-                      <button
-                        onClick={() =>
-                          setDismissed((prev) => new Set([...prev, fup.id]))
-                        }
-                        className="bg-gray-50 text-gray-500 border border-gray-200 rounded-lg py-2 px-3 text-xs font-medium hover:bg-gray-100 transition"
-                      >
-                        Descartar
-                      </button>
                     </div>
-                  </div>
-                )
-              })
+                  )
+                })}
+                {visibleFollowups.length > 3 && (
+                  <Link href="/followups?tab=seguimientos" className="block text-center py-2.5 text-xs text-[#E75480] font-medium hover:bg-gray-50 rounded-lg transition">
+                    Ver {visibleFollowups.length - 3} más →
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>

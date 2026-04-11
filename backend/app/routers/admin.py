@@ -1,3 +1,4 @@
+import re
 import random
 import string
 from datetime import datetime, timezone, timedelta
@@ -13,7 +14,8 @@ def _days_remaining(activated_at: str | None, role: str) -> int | None:
     """Returns days left in membership for consultoras, None for other roles."""
     if role != "consultora" or not activated_at:
         return None
-    activated = datetime.fromisoformat(activated_at.replace("Z", "+00:00"))
+    s = re.sub(r"\.(\d+)", lambda m: f".{(m.group(1) + '000000')[:6]}", activated_at.replace("Z", "+00:00"))
+    activated = datetime.fromisoformat(s)
     remaining = (activated + timedelta(days=MEMBERSHIP_DAYS) - datetime.now(timezone.utc)).days
     return max(remaining, 0)
 

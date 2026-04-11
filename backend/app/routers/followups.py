@@ -15,7 +15,7 @@ def get_followups(request: Request):
 
         # clients!inner excludes orphaned followups with no associated client row
         res = supabase.table("followups") \
-            .select("id, client_id, sale_id, type, scheduled_date, status, clients!inner(name, phone)") \
+            .select("id, client_id, sale_id, type, scheduled_date, status, mensaje, clients!inner(name, phone)") \
             .eq("user_id", user_id) \
             .eq("status", "pending") \
             .order("scheduled_date", desc=False) \
@@ -30,7 +30,7 @@ def get_followups(request: Request):
                 "sale_id": f["sale_id"],
                 "type": f["type"],
                 "scheduled_date": f["scheduled_date"],
-                "mensaje": generate_message(f["type"], client_data.get("name", "")),
+                "mensaje": f.get("mensaje") or generate_message(f["type"], client_data.get("name", "")),
                 "client_name": client_data.get("name", "Cliente"),
                 "phone": client_data.get("phone", ""),
             })

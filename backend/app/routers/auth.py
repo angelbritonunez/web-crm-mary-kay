@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Header, HTTPException
 from typing import Optional
@@ -35,7 +36,8 @@ def get_me(x_user_id: Optional[str] = Header(None)):
     if profile.get("role") == "consultora":
         activated_at = profile.get("activated_at")
         if activated_at:
-            activated = datetime.fromisoformat(activated_at.replace("Z", "+00:00"))
+            s = re.sub(r"\.(\d+)", lambda m: f".{(m.group(1) + '000000')[:6]}", activated_at.replace("Z", "+00:00"))
+            activated = datetime.fromisoformat(s)
             if datetime.now(timezone.utc) > activated + timedelta(days=MEMBERSHIP_DAYS):
                 supabase.table("profiles").update({"is_active": False}).eq("id", x_user_id).execute()
                 raise HTTPException(
