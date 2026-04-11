@@ -60,7 +60,7 @@ export default function ClientLayout({ children }: any) {
 
     loadUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: string, session) => {
       if (!session?.user) {
         setUser(null)
         setRole("consultora")
