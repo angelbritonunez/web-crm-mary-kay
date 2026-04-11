@@ -219,7 +219,6 @@ export default function ClientProfilePage() {
       setSalePayments((prev) => ({ ...prev, [abonoSaleId]: paymentsRes.payments || [] }))
       setAbonoSaleId(null)
       setAbonoAmount("")
-      setAbonoNotes("")
     } catch {
       setAbonoError("No se pudo registrar el abono.")
     } finally {
