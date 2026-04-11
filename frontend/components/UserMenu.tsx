@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase"
 
 export default function UserMenu() {
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -57,13 +56,9 @@ export default function UserMenu() {
 }, [])
 
   const handleLogout = async () => {
-    setLoading(true)
-
-    await supabase.auth.signOut()
-
-    setLoading(false)
-    setOpen(false) // ✅ cerrar dropdown
-
+    setOpen(false)
+    // scope: 'local' clears the local session instantly (no network wait)
+    await supabase.auth.signOut({ scope: "local" })
     router.push("/login")
   }
 
@@ -97,10 +92,9 @@ export default function UserMenu() {
 
           <button
             onClick={handleLogout}
-            disabled={loading}
-            className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-sm text-red-500 disabled:opacity-50 transition"
+            className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 text-sm text-red-500 transition"
           >
-            {loading ? "Cerrando..." : "Cerrar sesión"}
+            Cerrar sesión
           </button>
 
         </div>

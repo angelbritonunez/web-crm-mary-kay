@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -80,12 +80,15 @@ function SaveButton({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function ProfilePage() {
-  const router = useRouter()
+function ProfileContent() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const mustChange   = searchParams.get("mustChange") === "1"
 
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState("")
   const [userId, setUserId] = useState("")
+  const [role, setRole] = useState<string>("consultora")
 
   // Personal info
   const [firstName, setFirstName] = useState("")
@@ -141,7 +144,7 @@ export default function ProfilePage() {
 
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("first_name, last_name, phone, monthly_goal")
+        .select("first_name, last_name, phone, monthly_goal, role")
         .eq("id", user.id)
         .maybeSingle()
 
@@ -158,6 +161,7 @@ export default function ProfilePage() {
       setOriginalInfo({ firstName: fn, lastName: ln, phone: ph })
       setMonthlyGoal(goal)
       setOriginalGoal(goal)
+      setRole(profile?.role || "consultora")
       setLoading(false)
     }
 
@@ -281,15 +285,22 @@ export default function ProfilePage() {
       setNewPassword("")
       setConfirmPassword("")
       setPasswordStatus({ type: "success", msg: "Contraseña actualizada correctamente." })
-      setTimeout(() => setPasswordStatus(null), 3000)
+      // Clear must_change_password flag if this was a forced change
+      if (mustChange) {
+        const supabase2 = createClient()
+        await supabase2.from("profiles").update({ must_change_password: false }).eq("id", userId)
+        const dest = (role === "admin" || role === "operador") ? "/admin/users" : "/dashboard"
+        setTimeout(() => router.push(dest), 1500)
+      } else {
+        setTimeout(() => setPasswordStatus(null), 3000)
+      }
     }
     setSavingPassword(false)
   }
 
   const handleLogout = async () => {
-    setLoggingOut(true)
     const supabase = createClient()
-    await supabase.auth.signOut()
+    await supabase.auth.signOut({ scope: "local" })
     router.push("/login")
   }
 
@@ -321,6 +332,19 @@ export default function ProfilePage() {
   return (
     <div className="space-y-4">
 
+      {/* ── Banner cambio de contraseña obligatorio ── */}
+      {mustChange && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
+          <span className="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Debes cambiar tu contraseña</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Por seguridad, cambia la contraseña temporal antes de continuar. Ve a la sección <strong>Seguridad</strong> más abajo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Profile header ── */}
       <div className="bg-white rounded-2xl border border-gray-100 px-6 py-5">
         <div className="flex items-center gap-4">
@@ -335,8 +359,8 @@ export default function ProfilePage() {
             </h1>
             <p className="text-sm text-gray-400 mt-0.5">{email}</p>
             <div className="mt-1.5">
-              <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-[#FFF0F4] text-[#C0395E]">
-                Consultora
+              <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-[#FFF0F4] text-[#C0395E] capitalize">
+                {role}
               </span>
             </div>
           </div>
@@ -606,5 +630,13 @@ export default function ProfilePage() {
 
       </div>
     </div>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense>
+      <ProfileContent />
+    </Suspense>
   )
 }
