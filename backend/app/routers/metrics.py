@@ -9,6 +9,7 @@ router = APIRouter(prefix="/metrics", tags=["metrics"])
 
 @router.get("/followups")
 def followup_metrics(request: Request):
+    """Conversion rate: how many sent followups resulted in a sale (source_followup_id set)."""
     try:
         user_id = request.headers.get("x-user-id")
         if not user_id:
@@ -44,6 +45,10 @@ def followup_metrics(request: Request):
 
 @router.get("")
 def get_metrics(request: Request, period: str = "month"):
+    """
+    Business metrics for the selected period. Accepted values: week, month, last_month, year.
+    Each period is compared against its equivalent prior period for growth indicators.
+    """
     try:
         user_id = request.headers.get("x-user-id")
         if not user_id:
@@ -147,6 +152,8 @@ def get_metrics(request: Request, period: str = "month"):
         total_clients = len(all_clients)
         conv_rate = round((customers_n / total_clients * 100) if total_clients > 0 else 0, 1)
 
+        # Revenue chart: monthly buckets for year view, daily buckets for all others.
+        # sale_date (manual entry) takes precedence over created_at (system timestamp).
         chart_points = []
         if period == "year":
             monthly: dict = defaultdict(float)
@@ -186,6 +193,7 @@ def get_metrics(request: Request, period: str = "month"):
             for k, v in payment_map.items()
         ]
 
+        # Top 8 products by revenue for the period
         top_products = []
         sale_ids = [s["id"] for s in sales]
         if sale_ids:
@@ -213,6 +221,7 @@ def get_metrics(request: Request, period: str = "month"):
         converted_count = converted_res.count or 0
         followup_rate = round((converted_count / sent_count * 100) if sent_count > 0 else 0, 1)
 
+        # Skin type distribution is not filtered by period (reflects the full client base)
         skin_map: dict = defaultdict(int)
         for c in all_clients:
             st = c.get("skin_type") or "Sin especificar"

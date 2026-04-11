@@ -6,6 +6,7 @@ from app.routers import clients, products, sales, followups, metrics, dashboard
 
 app = FastAPI()
 
+# TODO: restrict allow_origins to the frontend domain in production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

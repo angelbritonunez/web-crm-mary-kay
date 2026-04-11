@@ -30,6 +30,7 @@ async def create_sale(sale: SaleRequest, request: Request):
 
         profit = calculate_profit(sale.total, sale.items)
 
+        # Cap initial payment to the total in case of data entry error
         initial = round(float(sale.initial_payment or 0), 2)
         if initial > sale.total:
             initial = round(sale.total, 2)
@@ -55,6 +56,7 @@ async def create_sale(sale: SaleRequest, request: Request):
 
         created_sale = sale_res.data[0]
 
+        # Mark the originating followup as sent so it leaves the pending queue
         if sale.source_followup_id:
             supabase.table("followups") \
                 .update({"status": "sent"}) \
@@ -72,11 +74,13 @@ async def create_sale(sale: SaleRequest, request: Request):
         ]
         supabase.table("sale_items").insert(items).execute()
 
+        # Any recorded sale transitions the client to customer, regardless of prior status
         supabase.table("clients").update({"status": "customer"}).eq("id", sale.client_id).execute()
 
         if not client_data.get("followup_enabled", True):
             return {"venta": created_sale, "items": items, "followups": []}
 
+        # Idempotency guard: prevents duplicate followups if the endpoint is called twice
         existing = supabase.table("followups").select("id").eq("sale_id", created_sale["id"]).execute()
         if existing.data:
             return {"venta": created_sale, "items": items, "followups": []}
@@ -104,6 +108,7 @@ async def create_sale(sale: SaleRequest, request: Request):
 
 @router.post("/sales/{sale_id}/payments")
 async def add_payment(sale_id: str, payment: PaymentRequest, request: Request):
+    """Records a partial or full payment. Amount is capped at the remaining balance."""
     try:
         user_id = request.headers.get("x-user-id")
         if not user_id:
@@ -190,7 +195,7 @@ async def get_payments(sale_id: str, request: Request):
 
 @router.get("/receivables")
 async def get_receivables(request: Request):
-    """Cuentas por cobrar: ventas con saldo pendiente."""
+    """Returns all sales with an outstanding balance (status pendiente or parcial)."""
     try:
         user_id = request.headers.get("x-user-id")
         if not user_id:
@@ -220,6 +225,7 @@ async def get_receivables(request: Request):
                     "amount_paid": paid,
                     "balance": balance,
                     "status": s.get("status"),
+                    # Prefer sale_date (manual); fall back to first 10 chars of created_at (YYYY-MM-DD)
                     "sale_date": s.get("sale_date") or s.get("created_at", "")[:10],
                 })
 

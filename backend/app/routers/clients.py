@@ -44,6 +44,7 @@ def update_client(client_id: str, client: ClientRequest, x_user_id: Optional[str
     if not x_user_id:
         raise HTTPException(status_code=400, detail="Missing x-user-id")
 
+    # Ownership check: double .eq on user_id acts as authorization guard
     existing = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
     if not existing.data:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")

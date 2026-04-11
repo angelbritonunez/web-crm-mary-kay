@@ -9,6 +9,10 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @router.get("")
 def get_dashboard(x_user_id: Optional[str] = Header(None)):
+    """
+    Aggregates all data needed for the main dashboard in a single request
+    (followups, recent clients, month metrics, receivables).
+    """
     if not x_user_id:
         raise HTTPException(status_code=400, detail="Missing x-user-id")
 
@@ -23,6 +27,7 @@ def get_dashboard(x_user_id: Optional[str] = Header(None)):
             .single() \
             .execute()
         profile = profile_res.data or {}
+        # Fallback chain: first_name → local part of email → generic label
         first_name = profile.get("first_name") or profile.get("email", "").split("@")[0] or "Consultora"
 
         followups_res = supabase.table("followups") \
@@ -42,10 +47,10 @@ def get_dashboard(x_user_id: Optional[str] = Header(None)):
                 "type": f["type"],
                 "scheduled_date": f["scheduled_date"],
                 "status": f["status"],
-                "mensaje": f.get("mensaje"),
+                "mensaje": f.get("mensaje"),  # reads stored message; may have been edited by consultant
                 "client_name": client.get("name", "Cliente"),
                 "client_phone": client.get("phone", ""),
-                "is_overdue": f["scheduled_date"] < now_iso,
+                "is_overdue": f["scheduled_date"] < now_iso,  # ISO string comparison is safe here
             })
 
         recent_clients_res = supabase.table("clients") \

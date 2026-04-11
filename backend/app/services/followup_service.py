@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+TZ_RD = ZoneInfo("America/Santo_Domingo")  # UTC-4, no daylight saving
+
 
 def get_first_name(full_name: str) -> str:
     if not full_name:
-        return "hermosa"
+        return "hermosa"  # fallback when client has no name on record
     return full_name.split(" ")[0]
 
 
 def generate_message(followup_type: str, client_name: str = "") -> str:
+    """Returns the WhatsApp message template for the given followup type (day2 / week2 / month2)."""
     first_name = get_first_name(client_name)
 
     if followup_type == "day2":
@@ -22,7 +25,8 @@ def generate_message(followup_type: str, client_name: str = "") -> str:
 
 
 def build_followup_schedule(client_id: str, sale_id: str, user_id: str) -> list:
-    now = datetime.now(ZoneInfo("America/Santo_Domingo"))
+    """Generates the three followups of the 2+2+2 cycle: 2 days, 2 weeks, 2 months after sale."""
+    now = datetime.now(TZ_RD)
 
     return [
         {
@@ -53,14 +57,12 @@ def build_followup_schedule(client_id: str, sale_id: str, user_id: str) -> list:
 
 
 def categorize_followups(followups: list) -> dict:
-    tz = ZoneInfo("America/Santo_Domingo")
-    now = datetime.now(tz)
+    """Splits followups into overdue, today, and upcoming buckets relative to current RD time."""
+    now = datetime.now(TZ_RD)
     start_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     end_today = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    overdue = []
-    today = []
-    upcoming = []
+    overdue, today, upcoming = [], [], []
 
     for f in followups:
         scheduled = datetime.fromisoformat(f["scheduled_date"])

@@ -13,6 +13,7 @@ def get_followups(request: Request):
         if not user_id:
             return {"error": "user_id requerido en header x-user-id"}
 
+        # clients!inner excludes orphaned followups with no associated client row
         res = supabase.table("followups") \
             .select("id, client_id, sale_id, type, scheduled_date, status, clients!inner(name, phone)") \
             .eq("user_id", user_id) \
@@ -47,6 +48,7 @@ def get_followups(request: Request):
 
 @router.post("/{followup_id}/complete")
 def complete_followup(followup_id: str):
+    """Called when the consultant sends the WhatsApp message manually."""
     res = supabase.table("followups") \
         .update({"status": "sent"}) \
         .eq("id", followup_id) \
@@ -64,11 +66,13 @@ def update_followup(followup_id: str, body: dict, x_user_id: Optional[str] = Hea
     if not existing.data:
         raise HTTPException(status_code=404, detail="Seguimiento no encontrado")
 
+    # Authorization via client ownership (no direct user_id on followup update path)
     client_id = existing.data[0]["client_id"]
     owner = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
     if not owner.data:
         raise HTTPException(status_code=403, detail="No autorizado")
 
+    # Whitelist to prevent unintended mutations of status or scheduled_date
     allowed_fields = {"mensaje"}
     payload = {k: v for k, v in body.items() if k in allowed_fields}
     if not payload:
