@@ -169,7 +169,7 @@ export default function ClientProfilePage() {
   const [sales, setSales] = useState<Sale[]>([])
   const [followups, setFollowups] = useState<Followup[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<Tab>("info")
+  const [activeTab, setActiveTab] = useState<Tab>("sales")
   const [salePayments, setSalePayments] = useState<Record<string, Payment[]>>({})
   const [expandedSales, setExpandedSales] = useState<Set<string>>(new Set())
 
@@ -338,8 +338,8 @@ export default function ClientProfilePage() {
   }
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "info", label: "Información" },
     { key: "sales", label: "Historial de ventas", count: sales.length },
+    { key: "info", label: "Información" },
     { key: "followups", label: "Seguimientos", count: followups.length },
   ]
 
