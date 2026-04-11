@@ -1,9 +1,32 @@
 import random
 import string
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Header, HTTPException
-from typing import Optional, Literal
+from typing import Optional
 from pydantic import BaseModel
 from app.db import supabase
+
+MEMBERSHIP_DAYS = 30
+
+
+def _days_remaining(activated_at: str | None, role: str) -> int | None:
+    """Returns days left in membership for consultoras, None for other roles."""
+    if role != "consultora" or not activated_at:
+        return None
+    activated = datetime.fromisoformat(activated_at.replace("Z", "+00:00"))
+    remaining = (activated + timedelta(days=MEMBERSHIP_DAYS) - datetime.now(timezone.utc)).days
+    return max(remaining, 0)
+
+
+def _deactivate_expired_consultoras():
+    """Sets is_active=False for consultoras whose 30-day membership has expired."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=MEMBERSHIP_DAYS)).isoformat()
+    supabase.table("profiles") \
+        .update({"is_active": False}) \
+        .eq("role", "consultora") \
+        .eq("is_active", True) \
+        .lt("activated_at", cutoff) \
+        .execute()
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -49,31 +72,16 @@ class PatchUserRequest(BaseModel):
 def list_users(x_user_id: Optional[str] = Header(None)):
     caller_role = get_caller_role(x_user_id)
 
+    _deactivate_expired_consultoras()
+
     query = supabase.table("profiles").select(
-        "id, email, first_name, last_name, role, is_active, notes, created_at"
+        "id, email, first_name, last_name, role, is_active, notes, created_at, activated_at"
     )
     # Operador only sees consultoras
     if caller_role == "operador":
         query = query.eq("role", "consultora")
     profiles_res = query.execute()
     profiles = profiles_res.data or []
-
-    clients_res   = supabase.table("clients").select("user_id").execute()
-    sales_res     = supabase.table("sales").select("user_id").execute()
-    followups_res = supabase.table("followups").select("user_id, status").execute()
-
-    client_counts = {}
-    for r in (clients_res.data or []):
-        client_counts[r["user_id"]] = client_counts.get(r["user_id"], 0) + 1
-
-    sales_counts = {}
-    for r in (sales_res.data or []):
-        sales_counts[r["user_id"]] = sales_counts.get(r["user_id"], 0) + 1
-
-    followup_counts = {}
-    for r in (followups_res.data or []):
-        if r["status"] == "pending":
-            followup_counts[r["user_id"]] = followup_counts.get(r["user_id"], 0) + 1
 
     auth_users = {}
     try:
@@ -87,10 +95,8 @@ def list_users(x_user_id: Optional[str] = Header(None)):
         uid = p["id"]
         result.append({
             **p,
-            "clients_count":     client_counts.get(uid, 0),
-            "sales_count":       sales_counts.get(uid, 0),
-            "followups_pending": followup_counts.get(uid, 0),
-            "last_sign_in_at":   auth_users.get(uid, {}).get("last_sign_in_at"),
+            "last_sign_in_at": auth_users.get(uid, {}).get("last_sign_in_at"),
+            "days_remaining":  _days_remaining(p.get("activated_at"), p.get("role", "")),
         })
 
     return {"status": "success", "data": result}
@@ -148,6 +154,11 @@ def patch_user(user_id: str, body: PatchUserRequest, x_user_id: Optional[str] = 
     payload = {}
     if body.is_active is not None:
         payload["is_active"] = body.is_active
+        if body.is_active:
+            # Check if this is a consultora to reset the membership counter
+            target = supabase.table("profiles").select("role").eq("id", user_id).single().execute()
+            if target.data and target.data.get("role") == "consultora":
+                payload["activated_at"] = datetime.now(timezone.utc).isoformat()
     if body.notes is not None:
         payload["notes"] = body.notes
 

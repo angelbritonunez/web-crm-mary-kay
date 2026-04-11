@@ -1,14 +1,33 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import Navbar from "@/components/Navbar"
+import { getMe } from "@/lib/api"
+
+const ALLOWED_ROUTES: Record<string, string[]> = {
+  consultora: ["/dashboard", "/clients", "/sales", "/metrics", "/followups", "/profile"],
+  admin:      ["/dashboard", "/clients", "/sales", "/metrics", "/followups", "/profile", "/admin"],
+  operador:   ["/admin/users", "/profile"],
+}
+
+const DEFAULT_REDIRECT: Record<string, string> = {
+  consultora: "/dashboard",
+  admin:      "/admin/users",
+  operador:   "/admin/users",
+}
+
+function isAllowed(role: string, pathname: string): boolean {
+  const allowed = ALLOWED_ROUTES[role] ?? ALLOWED_ROUTES.consultora
+  return allowed.some((p) => pathname.startsWith(p))
+}
 
 export default function ClientLayout({ children }: any) {
   const [user, setUser] = useState<any>(null)
   const [role, setRole] = useState<string>("consultora")
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const supabase = createClient()
@@ -20,24 +39,45 @@ export default function ClientLayout({ children }: any) {
       const user = session.user
       setUser(user)
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, must_change_password")
-        .eq("id", user.id)
-        .single()
+      let profile: { role: string; must_change_password: boolean }
+      try {
+        profile = await getMe(user.id)
+      } catch (e: any) {
+        await supabase.auth.signOut()
+        router.push(e.status === 403 ? "/login?desactivado=1" : "/login")
+        return
+      }
 
-      setRole(profile?.role || "consultora")
+      const resolvedRole = profile.role || "consultora"
+      setRole(resolvedRole)
 
-      if (profile?.must_change_password) {
+      if (profile.must_change_password) {
         router.push("/profile?mustChange=1")
+      } else if (!isAllowed(resolvedRole, pathname)) {
+        router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
       }
     }
 
     loadUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (!session?.user) setRole("consultora")
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) {
+        setUser(null)
+        setRole("consultora")
+        return
+      }
+      setUser(session.user)
+      try {
+        const profile = await getMe(session.user.id)
+        const resolvedRole = profile.role || "consultora"
+        setRole(resolvedRole)
+        if (!isAllowed(resolvedRole, pathname)) {
+          router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
+        }
+      } catch (e: any) {
+        await supabase.auth.signOut()
+        router.push(e.status === 403 ? "/login?desactivado=1" : "/login")
+      }
     })
 
     return () => { subscription.unsubscribe() }

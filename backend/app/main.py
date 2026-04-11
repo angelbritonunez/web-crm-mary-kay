@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import supabase
 
-from app.routers import clients, products, sales, followups, metrics, dashboard, admin
+from app.routers import clients, products, sales, followups, metrics, dashboard, admin, auth
 
 app = FastAPI()
 
@@ -22,6 +22,7 @@ app.include_router(followups.router)
 app.include_router(metrics.router)
 app.include_router(dashboard.router)
 app.include_router(admin.router)
+app.include_router(auth.router)
 
 
 @app.get("/")

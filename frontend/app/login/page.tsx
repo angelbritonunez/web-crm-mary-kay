@@ -1,16 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react"
 import AuthCard from "@/components/ui/AuthCard"
 import AuthInput from "@/components/ui/AuthInput"
 import AuthButton from "@/components/ui/AuthButton"
+import { getMe } from "@/lib/api"
 
 export default function LoginPage() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -18,6 +20,12 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (searchParams.get("desactivado") === "1") {
+      setError("Tu cuenta está desactivada. Comunícate con tu administrador.")
+    }
+  }, [searchParams])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -30,17 +38,20 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single()
-
-      const role = profile?.role
-      if (role === "admin" || role === "operador") {
-        router.push("/admin/users")
-      } else {
-        router.push("/dashboard")
+      try {
+        const profile = await getMe(data.user.id)
+        const { role } = profile
+        if (role === "admin" || role === "operador") {
+          router.push("/admin/users")
+        } else {
+          router.push("/dashboard")
+        }
+      } catch (e: any) {
+        await supabase.auth.signOut()
+        setError(e.status === 403
+          ? e.message
+          : "No se pudo verificar tu cuenta. Intenta de nuevo."
+        )
       }
     }
   }

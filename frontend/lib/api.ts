@@ -19,6 +19,20 @@ const getUserId = async () => {
   return user.id
 }
 
+// AUTH
+export const getMe = async (userId: string): Promise<{ role: string; must_change_password: boolean }> => {
+  const res = await fetch(`${API_URL}/auth/me`, {
+    headers: { "x-user-id": userId },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const error = new Error(err.detail || "Error obteniendo perfil") as any
+    error.status = res.status
+    throw error
+  }
+  return res.json()
+}
+
 // CLIENTS
 export const createClient = async (data: {
   name: string

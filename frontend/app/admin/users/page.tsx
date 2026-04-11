@@ -31,9 +31,7 @@ type AdminUser = {
   notes: string | null
   created_at: string
   last_sign_in_at: string | null
-  clients_count: number
-  sales_count: number
-  followups_pending: number
+  days_remaining: number | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -57,6 +55,31 @@ const ROLE_LABELS: Record<Role, string> = {
   consultora: "Consultora",
   admin: "Admin",
   operador: "Operador",
+}
+
+function MembershipBadge({ days, isActive }: { days: number | null; isActive: boolean }) {
+  if (days === null) return <span className="text-gray-300">—</span>
+  if (!isActive) return <span className="text-xs text-gray-400 italic">Inactiva</span>
+  if (days === 0) return (
+    <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-semibold rounded-full px-2.5 py-0.5">
+      Vencida
+    </span>
+  )
+  if (days <= 5) return (
+    <span className="inline-flex items-center gap-1 bg-red-50 text-red-500 text-xs font-semibold rounded-full px-2.5 py-0.5">
+      {days}d
+    </span>
+  )
+  if (days <= 10) return (
+    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-500 text-xs font-semibold rounded-full px-2.5 py-0.5">
+      {days}d
+    </span>
+  )
+  return (
+    <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-xs font-semibold rounded-full px-2.5 py-0.5">
+      {days}d
+    </span>
+  )
 }
 
 const ROLE_STYLES: Record<Role, string> = {
@@ -92,7 +115,7 @@ function CreateUserModal({
   userId: string
   callerRole: Role
   onClose: () => void
-  onCreated: (email: string, password: string, phone: string) => void
+  onCreated: (email: string, password: string, phone: string, firstName: string) => void
 }) {
   const [email, setEmail]         = useState("")
   const [firstName, setFirstName] = useState("")
@@ -132,7 +155,7 @@ function CreateUserModal({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.detail || "Error creando usuario")
-      onCreated(data.email, data.temp_password, phone.replace(/\D/g, ""))
+      onCreated(data.email, data.temp_password, phone.replace(/\D/g, ""), firstName.trim())
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -256,12 +279,12 @@ function CreateUserModal({
 
 // ── Credentials modal ──────────────────────────────────────────────────────────
 
-function CredentialsModal({ email, password, phone, onClose }: {
-  email: string; password: string; phone: string; onClose: () => void
+function CredentialsModal({ email, password, phone, firstName, onClose }: {
+  email: string; password: string; phone: string; firstName: string; onClose: () => void
 }) {
   const loginUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : "/login"
   const waMessage = [
-    `\u00A1Hola! Te damos la bienvenida a GlowSuite \uD83D\uDC84`,
+    `\u00A1Hola, ${firstName}! Te damos la bienvenida a GlowSuite \uD83D\uDC84`,
     ``,
     `Tus credenciales de acceso son:`,
     `\uD83D\uDCE7 Email: ${email}`,
@@ -318,7 +341,8 @@ export default function AdminUsersPage() {
   const [users, setUsers]           = useState<AdminUser[]>([])
   const [loading, setLoading]       = useState(true)
   const [showCreate, setShowCreate] = useState(false)
-  const [credentials, setCredentials] = useState<{ email: string; password: string; phone: string } | null>(null)
+  const [credentials, setCredentials] = useState<{ email: string; password: string; phone: string; firstName: string } | null>(null)
+  const [search, setSearch]           = useState("")
   const [togglingId, setTogglingId]   = useState<string | null>(null)
   const [editingNotes, setEditingNotes] = useState<{ id: string; value: string } | null>(null)
   const [resetResult, setResetResult]     = useState<{ id: string; password: string } | null>(null)
@@ -406,15 +430,26 @@ export default function AdminUsersPage() {
     setConfirmDelete(null)
   }
 
-  const handleUserCreated = (email: string, password: string, phone: string) => {
+  const handleUserCreated = (email: string, password: string, phone: string, firstName: string) => {
     setShowCreate(false)
-    setCredentials({ email, password, phone })
+    setCredentials({ email, password, phone, firstName })
     if (userId) fetchUsers(userId)
   }
 
   const total    = users.length
   const activos  = users.filter((u) => u.is_active).length
   const inactivos = users.filter((u) => !u.is_active).length
+
+  const filteredUsers = search.trim()
+    ? users.filter((u) => {
+        const q = search.toLowerCase()
+        return (
+          (u.first_name || "").toLowerCase().includes(q) ||
+          (u.last_name  || "").toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q)
+        )
+      })
+    : users
 
   if (loading) {
     return (
@@ -463,8 +498,20 @@ export default function AdminUsersPage() {
 
       {/* ── Table ── */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="border-b border-gray-50 px-5 py-4">
+        <div className="border-b border-gray-50 px-5 py-4 flex items-center justify-between gap-4">
           <span className="text-sm font-semibold text-gray-800">Usuarios</span>
+          <div className="relative w-64">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre..."
+              className="w-full border border-gray-200 rounded-lg bg-gray-50 pl-9 pr-3 py-2 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -472,11 +519,7 @@ export default function AdminUsersPage() {
               <tr className="border-b border-gray-50">
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Usuario</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Rol</th>
-                {callerRole === "admin" && <>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Clientes</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ventas</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Seguim.</th>
-                </>}
+                <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Último acceso</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Desde</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Estado</th>
@@ -485,14 +528,14 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {users.length === 0 ? (
+              {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={callerRole === "admin" ? 10 : 7} className="text-center py-12 text-gray-400 text-sm">
-                    No hay usuarios registrados.
+                  <td colSpan={8} className="text-center py-12 text-gray-400 text-sm">
+                    {search.trim() ? "No se encontraron usuarios con ese nombre." : "No hay usuarios registrados."}
                   </td>
                 </tr>
               ) : (
-                users.map((u) => (
+                filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-gray-50/50 transition">
                     {/* Nombre / email */}
                     <td className="px-5 py-3">
@@ -514,16 +557,10 @@ export default function AdminUsersPage() {
                         {ROLE_LABELS[u.role]}
                       </span>
                     </td>
-                    {/* Stats — solo admin */}
-                    {callerRole === "admin" && <>
-                      <td className="px-4 py-3 text-center font-semibold text-gray-700">{u.clients_count}</td>
-                      <td className="px-4 py-3 text-center font-semibold text-gray-700">{u.sales_count}</td>
-                      <td className="px-4 py-3 text-center">
-                        {u.followups_pending > 0
-                          ? <span className="bg-amber-50 text-amber-600 text-xs font-semibold rounded-full px-2 py-0.5">{u.followups_pending}</span>
-                          : <span className="text-gray-300">—</span>}
-                      </td>
-                    </>}
+                    {/* Membresía */}
+                    <td className="px-4 py-3 text-center">
+                      <MembershipBadge days={u.days_remaining} isActive={u.is_active} />
+                    </td>
                     {/* Fechas */}
                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDateTime(u.last_sign_in_at)}</td>
                     <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(u.created_at)}</td>
@@ -628,6 +665,7 @@ export default function AdminUsersPage() {
           email={credentials.email}
           password={credentials.password}
           phone={credentials.phone}
+          firstName={credentials.firstName}
           onClose={() => setCredentials(null)}
         />
       )}
