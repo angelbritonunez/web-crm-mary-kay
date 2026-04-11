@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { ChevronDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { addPayment, getSalePayments, updateClient, deleteClient } from "@/lib/api"
 
@@ -170,6 +171,14 @@ export default function ClientProfilePage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("info")
   const [salePayments, setSalePayments] = useState<Record<string, Payment[]>>({})
+  const [expandedSales, setExpandedSales] = useState<Set<string>>(new Set())
+
+  const toggleSale = (id: string) =>
+    setExpandedSales((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   // Edit form state — mirrors /clients/new
   const [name, setName] = useState("")
@@ -628,19 +637,13 @@ export default function ClientProfilePage() {
 
           {/* ── Tab: Historial de ventas ── */}
           {activeTab === "sales" && (
-            <div className="divide-y divide-gray-50">
+            <div className="p-4 space-y-2">
               {sales.length === 0 ? (
-                <div className="px-6 py-14 text-center">
-                  <p className="text-sm font-medium text-gray-600">
-                    Sin compras registradas
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Las ventas aparecerán aquí una vez que se registren.
-                  </p>
+                <div className="py-14 text-center">
+                  <p className="text-sm font-medium text-gray-600">Sin compras registradas</p>
+                  <p className="text-xs text-gray-400 mt-1">Las ventas aparecerán aquí una vez que se registren.</p>
                   <button
-                    onClick={() =>
-                      router.push(`/sales/new?client_id=${client.id}`)
-                    }
+                    onClick={() => router.push(`/sales/new?client_id=${client.id}`)}
                     className="mt-4 bg-[#E75480] text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#d04070] transition"
                   >
                     + Registrar venta
@@ -649,189 +652,191 @@ export default function ClientProfilePage() {
               ) : (
                 sales.map((sale) => {
                   const subtotal = sale.sale_items?.reduce(
-                    (acc, item) =>
-                      acc + Number(item.price) * Number(item.quantity),
-                    0
+                    (acc, item) => acc + Number(item.price) * Number(item.quantity), 0
                   ) ?? 0
-                  const discountAmt = sale.discount
-                    ? (subtotal * sale.discount) / 100
-                    : 0
+                  const discountAmt = sale.discount ? (subtotal * sale.discount) / 100 : 0
                   const total = subtotal - discountAmt
+                  const isOpen = expandedSales.has(sale.id)
 
                   return (
-                    <div key={sale.id} className="px-6 py-4">
-                      {/* Sale header */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs text-gray-400">
+                    <div key={sale.id} className="border border-gray-100 rounded-xl overflow-hidden bg-white">
+
+                      {/* ── Collapsed header (always visible) ── */}
+                      <button
+                        type="button"
+                        onClick={() => toggleSale(sale.id)}
+                        className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition"
+                      >
+                        {/* Chevron */}
+                        <ChevronDown
+                          size={15}
+                          className={`flex-shrink-0 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                        />
+
+                        {/* Date */}
+                        <span className="text-xs text-gray-400 w-24 flex-shrink-0">
                           {formatDate(sale.sale_date ?? sale.created_at)}
                         </span>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-gray-100 text-gray-500 capitalize">
+
+                        {/* Products summary */}
+                        <span className="flex-1 text-xs text-gray-600 truncate">
+                          {sale.sale_items?.map((i) => `${i.product?.name ?? "Producto"} ×${i.quantity}`).join(", ") || "—"}
+                        </span>
+
+                        {/* Badges + total */}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-gray-100 text-gray-500 capitalize hidden sm:inline">
                             {sale.payment_type || "Efectivo"}
                           </span>
                           {sale.status === "pagado" ? (
-                            <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-green-50 text-green-700">
-                              Pagado
-                            </span>
+                            <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-green-50 text-green-700">Pagado</span>
                           ) : sale.status === "parcial" ? (
-                            <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-orange-50 text-orange-600">
-                              Abono parcial
-                            </span>
+                            <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-orange-50 text-orange-600">Parcial</span>
                           ) : (
-                            <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-yellow-50 text-yellow-700">
-                              Pendiente
-                            </span>
+                            <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-yellow-50 text-yellow-700">Pendiente</span>
                           )}
+                          <span className="text-sm font-semibold text-gray-800 w-20 text-right">
+                            {formatCurrency(total)}
+                          </span>
                         </div>
-                      </div>
+                      </button>
 
-                      {/* Items */}
-                      <div className="space-y-1.5">
-                        {sale.sale_items?.map((item, i) => (
-                          <div
-                            key={i}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-gray-600">
-                              {item.product?.name ?? "Producto"} ×{item.quantity}
-                            </span>
-                            <span className="text-gray-700 font-medium">
-                              {formatCurrency(
-                                Number(item.price) * Number(item.quantity)
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {/* ── Expanded detail ── */}
+                      {isOpen && (
+                        <div className="px-4 pb-4 pt-1 border-t border-gray-50 space-y-3">
 
-                      {/* Notes */}
-                      {sale.notes && (
-                        <p className="mt-2 text-xs text-gray-400 italic">
-                          {sale.notes}
-                        </p>
-                      )}
-
-                      {/* Totals */}
-                      <div className="mt-3 pt-3 border-t border-gray-50 space-y-1">
-                        {sale.discount > 0 && (
-                          <div className="flex justify-between text-xs text-gray-400">
-                            <span>Descuento {sale.discount}%</span>
-                            <span>−{formatCurrency(discountAmt)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between text-sm font-semibold text-gray-800">
-                          <span>Total</span>
-                          <span>{formatCurrency(total)}</span>
-                        </div>
-                        {sale.status !== "pagado" && (
-                          <>
-                            {Number(sale.amount_paid) > 0 && (
-                              <div className="flex justify-between text-xs text-gray-400">
-                                <span>Abonado</span>
-                                <span className="text-green-600">{formatCurrency(Number(sale.amount_paid))}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between text-xs font-semibold text-orange-600">
-                              <span>Saldo pendiente</span>
-                              <span>{formatCurrency(Math.max(0, total - Number(sale.amount_paid)))}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Payment history */}
-                      {(salePayments[sale.id] ?? []).length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-50">
-                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                            Historial de pagos
-                          </p>
-                          <div className="space-y-1.5">
-                            {(salePayments[sale.id] ?? []).map((p) => (
-                              <div key={p.id} className="flex items-center justify-between text-xs">
-                                <div className="flex items-center gap-2 text-gray-500">
-                                  <span>{formatDate(p.payment_date)}</span>
-                                  <span className="rounded-full px-2 py-0.5 bg-gray-100 text-gray-400 capitalize">
-                                    {p.payment_type}
-                                  </span>
-                                  {p.notes && (
-                                    <span className="text-gray-300 italic">{p.notes}</span>
-                                  )}
-                                </div>
-                                <span className="font-semibold text-green-600">
-                                  {formatCurrency(p.amount)}
-                                </span>
+                          {/* Items */}
+                          <div className="space-y-1.5 pt-1">
+                            {sale.sale_items?.map((item, i) => (
+                              <div key={i} className="flex justify-between text-sm">
+                                <span className="text-gray-600">{item.product?.name ?? "Producto"} ×{item.quantity}</span>
+                                <span className="text-gray-700 font-medium">{formatCurrency(Number(item.price) * Number(item.quantity))}</span>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
 
-                      {/* Abono action */}
-                      {sale.status !== "pagado" && (
-                        <div className="mt-3">
-                          {abonoSaleId === sale.id ? (
-                            <div className="bg-gray-50 rounded-xl p-3 space-y-2.5">
-                              <div className="flex items-center justify-between">
-                                <p className="text-xs font-semibold text-gray-700">Registrar abono</p>
-                                <span className="text-xs text-orange-600 font-semibold">
-                                  Saldo: {formatCurrency(Math.max(0, Number(sale.total) - Number(sale.amount_paid)))}
-                                </span>
+                          {/* Notes */}
+                          {sale.notes && (
+                            <p className="text-xs text-gray-400 italic">{sale.notes}</p>
+                          )}
+
+                          {/* Totals */}
+                          <div className="pt-2 border-t border-gray-100 space-y-1">
+                            {sale.discount > 0 && (
+                              <div className="flex justify-between text-xs text-gray-400">
+                                <span>Descuento {sale.discount}%</span>
+                                <span>−{formatCurrency(discountAmt)}</span>
                               </div>
-                              {abonoError && (
-                                <p className="text-xs text-red-500">{abonoError}</p>
-                              )}
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min={0}
-                                placeholder={`Máx. ${formatCurrency(Math.max(0, Number(sale.total) - Number(sale.amount_paid)))}`}
-                                value={abonoAmount}
-                                onChange={(e) => {
-                                  const remaining = Math.max(0, Number(sale.total) - Number(sale.amount_paid))
-                                  const v = e.target.value
-                                  if (v === "") { setAbonoAmount(""); return }
-                                  const n = Math.min(Number(v), remaining)
-                                  setAbonoAmount(String(n < 0 ? 0 : n))
-                                }}
-                                className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
-                              />
-                              <div className="flex bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
-                                {(["efectivo", "transferencia"] as const).map((t) => (
-                                  <button
-                                    key={t}
-                                    type="button"
-                                    onClick={() => setAbonoType(t)}
-                                    className={`flex-1 py-1.5 text-xs font-medium rounded-md capitalize transition ${
-                                      abonoType === t ? "bg-[#E75480] text-white" : "text-gray-500 hover:text-gray-700"
-                                    }`}
-                                  >
-                                    {t}
-                                  </button>
+                            )}
+                            <div className="flex justify-between text-sm font-semibold text-gray-800">
+                              <span>Total</span>
+                              <span>{formatCurrency(total)}</span>
+                            </div>
+                            {sale.status !== "pagado" && (
+                              <>
+                                {Number(sale.amount_paid) > 0 && (
+                                  <div className="flex justify-between text-xs text-gray-400">
+                                    <span>Abonado</span>
+                                    <span className="text-green-600">{formatCurrency(Number(sale.amount_paid))}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between text-xs font-semibold text-orange-600">
+                                  <span>Saldo pendiente</span>
+                                  <span>{formatCurrency(Math.max(0, total - Number(sale.amount_paid)))}</span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          {/* Payment history */}
+                          {(salePayments[sale.id] ?? []).length > 0 && (
+                            <div className="pt-2 border-t border-gray-100">
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                                Historial de pagos
+                              </p>
+                              <div className="space-y-1.5">
+                                {(salePayments[sale.id] ?? []).map((p) => (
+                                  <div key={p.id} className="flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2 text-gray-500">
+                                      <span>{formatDate(p.payment_date)}</span>
+                                      <span className="rounded-full px-2 py-0.5 bg-gray-100 text-gray-400 capitalize">
+                                        {p.payment_type}
+                                      </span>
+                                      {p.notes && <span className="text-gray-300 italic">{p.notes}</span>}
+                                    </div>
+                                    <span className="font-semibold text-green-600">{formatCurrency(p.amount)}</span>
+                                  </div>
                                 ))}
                               </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={handleSaveAbono}
-                                  disabled={savingAbono}
-                                  className="flex-1 bg-[#E75480] text-white rounded-lg py-2 text-xs font-semibold hover:bg-[#d04070] transition disabled:opacity-50"
-                                >
-                                  {savingAbono ? "Guardando..." : "Confirmar abono"}
-                                </button>
-                                <button
-                                  onClick={() => { setAbonoSaleId(null); setAbonoAmount(""); setAbonoError(null) }}
-                                  className="text-xs text-gray-400 hover:text-gray-600 px-3"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
                             </div>
-                          ) : (
-                            <button
-                              onClick={() => { setAbonoSaleId(sale.id); setAbonoAmount(""); setAbonoError(null) }}
-                              className="text-xs text-[#E75480] font-semibold hover:underline"
-                            >
-                              + Registrar abono
-                            </button>
+                          )}
+
+                          {/* Abono action */}
+                          {sale.status !== "pagado" && (
+                            <div className="pt-1">
+                              {abonoSaleId === sale.id ? (
+                                <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2.5">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold text-gray-700">Registrar abono</p>
+                                    <span className="text-xs text-orange-600 font-semibold">
+                                      Saldo: {formatCurrency(Math.max(0, Number(sale.total) - Number(sale.amount_paid)))}
+                                    </span>
+                                  </div>
+                                  {abonoError && <p className="text-xs text-red-500">{abonoError}</p>}
+                                  <input
+                                    type="number"
+                                    inputMode="numeric"
+                                    min={0}
+                                    placeholder={`Máx. ${formatCurrency(Math.max(0, Number(sale.total) - Number(sale.amount_paid)))}`}
+                                    value={abonoAmount}
+                                    onChange={(e) => {
+                                      const remaining = Math.max(0, Number(sale.total) - Number(sale.amount_paid))
+                                      const v = e.target.value
+                                      if (v === "") { setAbonoAmount(""); return }
+                                      const n = Math.min(Number(v), remaining)
+                                      setAbonoAmount(String(n < 0 ? 0 : n))
+                                    }}
+                                    className="w-full border border-gray-200 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+                                  />
+                                  <div className="flex bg-white border border-gray-200 rounded-lg p-0.5 gap-0.5">
+                                    {(["efectivo", "transferencia"] as const).map((t) => (
+                                      <button
+                                        key={t}
+                                        type="button"
+                                        onClick={() => setAbonoType(t)}
+                                        className={`flex-1 py-1.5 text-xs font-medium rounded-md capitalize transition ${
+                                          abonoType === t ? "bg-[#E75480] text-white" : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                      >
+                                        {t}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={handleSaveAbono}
+                                      disabled={savingAbono}
+                                      className="flex-1 bg-[#E75480] text-white rounded-lg py-2 text-xs font-semibold hover:bg-[#d04070] transition disabled:opacity-50"
+                                    >
+                                      {savingAbono ? "Guardando..." : "Confirmar abono"}
+                                    </button>
+                                    <button
+                                      onClick={() => { setAbonoSaleId(null); setAbonoAmount(""); setAbonoError(null) }}
+                                      className="text-xs text-gray-400 hover:text-gray-600 px-3"
+                                    >
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => { setAbonoSaleId(sale.id); setAbonoAmount(""); setAbonoError(null) }}
+                                  className="text-xs text-[#E75480] font-semibold hover:underline"
+                                >
+                                  + Registrar abono
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
