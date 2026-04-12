@@ -126,12 +126,6 @@ function StatusBadge({ status }: { status: string }) {
         Cliente
       </span>
     )
-  if (status === "later")
-    return (
-      <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-yellow-50 text-yellow-700">
-        Más adelante
-      </span>
-    )
   return (
     <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-gray-100 text-gray-500">
       Prospecto
@@ -523,7 +517,6 @@ export default function ClientProfilePage() {
                   >
                     <option value="prospect">Prospecto — no ha comprado</option>
                     <option value="customer">Cliente — ya compró</option>
-                    <option value="later">Más adelante</option>
                   </select>
                 </div>
               </div>

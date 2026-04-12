@@ -27,12 +27,6 @@ function StatusBadge({ status }: { status: string }) {
         Cliente
       </span>
     )
-  if (status === "later")
-    return (
-      <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-yellow-50 text-yellow-700">
-        Más adelante
-      </span>
-    )
   return (
     <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-gray-100 text-gray-500">
       Prospecto
@@ -45,6 +39,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "customer" | "prospect">("all")
 
   useEffect(() => {
     const init = async () => {
@@ -62,11 +57,11 @@ export default function ClientsPage() {
     init()
   }, [router])
 
-  const filtered = clients.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      (c.phone || "").includes(search)
-  )
+  const filtered = clients.filter((c) => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase())
+    const matchesStatus = statusFilter === "all" || c.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   const customerCount = clients.filter((c) => c.status === "customer").length
   const prospectCount = clients.filter((c) => c.status === "prospect").length
@@ -95,8 +90,8 @@ export default function ClientsPage() {
       {/* ── Main card ── */}
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
 
-        {/* Sticky search header */}
-        <div className="border-b border-gray-50 px-5 py-3">
+        {/* Sticky search + filter header */}
+        <div className="border-b border-gray-50 px-5 py-3 space-y-2.5">
           <div className="relative">
             <Search
               size={14}
@@ -104,11 +99,30 @@ export default function ClientsPage() {
             />
             <input
               type="text"
-              placeholder="Buscar por nombre o teléfono..."
+              placeholder="Buscar por nombre..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-8 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
             />
+          </div>
+          <div className="flex gap-1.5">
+            {(["all", "customer", "prospect"] as const).map((s) => {
+              const label = s === "all" ? "Todos" : s === "customer" ? "Clientes" : "Prospectos"
+              const active = statusFilter === s
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                    active
+                      ? "bg-[#E75480] text-white"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  }`}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -131,9 +145,11 @@ export default function ClientsPage() {
           ) : filtered.length === 0 ? (
             <div className="px-5 py-14 text-center">
               <p className="text-sm font-medium text-gray-600">
-                {search ? "No se encontraron resultados" : "No tienes clientes registrados"}
+                {search || statusFilter !== "all"
+                  ? "No se encontraron resultados"
+                  : "No tienes clientes registrados"}
               </p>
-              {!search && (
+              {!search && statusFilter === "all" && (
                 <p className="text-xs text-gray-400 mt-1">
                   Agrega tu primer cliente para comenzar.
                 </p>

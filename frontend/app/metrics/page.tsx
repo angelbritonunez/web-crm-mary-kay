@@ -25,7 +25,7 @@ type ChartPoint = { date: string; revenue: number }
 type PaymentItem = { type: string; total: number; count: number }
 type ProductItem = { name: string; quantity: number; revenue: number }
 type FollowupStats = { sent: number; pending: number; converted: number; rate: number }
-type ClientPipeline = { prospects: number; customers: number; later: number; total: number }
+type ClientPipeline = { prospects: number; customers: number; total: number }
 type SkinItem = { skin_type: string; count: number }
 
 type MetricsData = {
@@ -571,21 +571,6 @@ export default function MetricsPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs font-medium text-gray-700">Para más adelante</span>
-                    <span className="text-xs text-yellow-600 font-semibold">
-                      {pipe?.later ?? 0}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-yellow-400 rounded-full transition-all duration-500"
-                      style={{ width: `${pipe?.total ? ((pipe.later / pipe.total) * 100) : 0}%` }}
-                    />
-                  </div>
-                </div>
-
                 {/* Conversion rate callout */}
                 {(pipe?.total ?? 0) > 0 && (
                   <div className="bg-[#FFF0F4] rounded-lg px-4 py-3 mt-2">

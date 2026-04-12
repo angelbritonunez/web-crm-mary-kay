@@ -166,7 +166,6 @@ export default function NewClientPage() {
                 >
                   <option value="prospect">Prospecto — no ha comprado</option>
                   <option value="customer">Cliente — ya compró</option>
-                  <option value="later">Más adelante</option>
                 </select>
               </div>
             </div>

@@ -346,16 +346,10 @@ export default function NewSaleContent() {
                                 className={`rounded-full text-xs font-medium px-2.5 py-0.5 ${
                                   c.status === "customer"
                                     ? "bg-[#FFF0F4] text-[#C0395E]"
-                                    : c.status === "later"
-                                    ? "bg-yellow-50 text-yellow-700"
                                     : "bg-gray-100 text-gray-500"
                                 }`}
                               >
-                                {c.status === "customer"
-                                  ? "Cliente"
-                                  : c.status === "later"
-                                  ? "Más adelante"
-                                  : "Prospecto"}
+                                {c.status === "customer" ? "Cliente" : "Prospecto"}
                               </span>
                             </div>
                           ))

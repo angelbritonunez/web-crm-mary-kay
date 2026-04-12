@@ -11,6 +11,7 @@ type Followup = {
   type: "day2" | "week2" | "month2"
   scheduled_date: string
   client_name: string
+  client_status: string
   phone: string
   mensaje: string
   bucket: "overdue" | "today" | "upcoming"
@@ -92,6 +93,11 @@ function FollowupsContent() {
   const [abonoType, setAbonoType]     = useState<"efectivo" | "transferencia">("efectivo")
   const [savingAbono, setSavingAbono] = useState(false)
 
+  // Cobro message edit state
+  const [cobroMessages, setCobroMessages]   = useState<Record<string, string>>({})
+  const [editingCobroId, setEditingCobroId] = useState<string | null>(null)
+  const [editCobroText, setEditCobroText]   = useState("")
+
   useEffect(() => {
     const load = async () => {
       setLoading(true)
@@ -120,8 +126,14 @@ function FollowupsContent() {
         if (String(rRes.reason).includes("autenticado")) { router.push("/login"); return }
       } else {
         const data = rRes.value
-        setReceivables(data.receivables || [])
+        const rcv = data.receivables || []
+        setReceivables(rcv)
         setTotalOwed(data.total_owed || 0)
+        const msgs: Record<string, string> = {}
+        rcv.forEach((r: Receivable) => {
+          msgs[r.sale_id] = `Hola ${r.client_name.split(" ")[0]} Espero que estés disfrutando muchísimo tus productos. Te escribo porque quedó un pendiente del saldo de tu última compra y quiero tenerlo al día para seguir consintiéndote como te mereces ✨ ¿Te comparto el número de cuenta y quedamos al día? 🌸`
+        })
+        setCobroMessages(msgs)
       }
 
       setLoading(false)
@@ -279,10 +291,17 @@ function FollowupsContent() {
                   <div key={fup.id} className="bg-white rounded-xl border border-gray-100 p-4">
                     {/* Row 1 */}
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-semibold text-sm text-gray-800">{fup.client_name}</span>
+                        <span className={`rounded-full text-xs font-medium px-2 py-0.5 ${
+                          fup.client_status === "customer"
+                            ? "bg-[#FFF0F4] text-[#C0395E]"
+                            : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {fup.client_status === "customer" ? "Cliente" : "Prospecto"}
+                        </span>
                         {fup.phone && (
-                          <span className="text-xs text-gray-400 ml-1.5">· {formatPhone(fup.phone)}</span>
+                          <span className="text-xs text-gray-400">· {formatPhone(fup.phone)}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
@@ -384,15 +403,21 @@ function FollowupsContent() {
           ) : (
             <div className="space-y-2">
               {receivables.map((r) => {
-                const waMsg = `Hola ${r.client_name.split(" ")[0]} 💕, te recuerdo que tienes un saldo pendiente de ${formatCurrency(r.balance)} de tu compra del ${formatDate(r.sale_date)}. ¿Cuándo lo podemos cuadrar? 😊`
+                const waMsg = cobroMessages[r.sale_id] ?? ""
                 const isAbono = abonoId === r.sale_id
+                const isEditingCobro = editingCobroId === r.sale_id
 
                 return (
                   <div key={r.sale_id} className="bg-white rounded-xl border border-gray-100 p-4">
                     {/* Row 1: client + amounts */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div>
-                        <p className="font-semibold text-sm text-gray-800">{r.client_name}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-semibold text-sm text-gray-800">{r.client_name}</p>
+                          <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-[#FFF0F4] text-[#C0395E]">
+                            Cliente
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-400 mt-0.5">{formatPhone(r.client_phone)}</p>
                         <p className="text-xs text-gray-400 mt-0.5">Compra: {formatDate(r.sale_date)}</p>
                       </div>
@@ -406,6 +431,45 @@ function FollowupsContent() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Message preview */}
+                    {isEditingCobro ? (
+                      <div className="mb-3">
+                        <textarea
+                          value={editCobroText}
+                          onChange={(e) => setEditCobroText(e.target.value)}
+                          className="w-full border border-gray-200 rounded-lg p-2.5 text-xs text-gray-700 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#E75480] resize-none min-h-[64px] mb-2"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setCobroMessages((prev) => ({ ...prev, [r.sale_id]: editCobroText }))
+                              setEditingCobroId(null)
+                            }}
+                            className="bg-[#E75480] text-white rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-[#d04070] transition"
+                          >
+                            Guardar
+                          </button>
+                          <button
+                            onClick={() => setEditingCobroId(null)}
+                            className="text-gray-400 text-xs hover:text-gray-600 px-2 py-1.5"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 leading-relaxed">{waMsg}</p>
+                        <button
+                          onClick={() => { setEditingCobroId(r.sale_id); setEditCobroText(waMsg) }}
+                          className="text-xs text-[#E75480] font-medium hover:underline mt-1"
+                        >
+                          Editar mensaje
+                        </button>
+                      </div>
+                    )}
 
                     {/* Abono inline form */}
                     {isAbono && (
