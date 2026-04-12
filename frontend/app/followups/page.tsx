@@ -384,7 +384,7 @@ function FollowupsContent() {
           ) : (
             <div className="space-y-2">
               {receivables.map((r) => {
-                const waMsg = `Hola ${r.client_name.split(" ")[0]} 💕, te recuerdo que tienes un saldo pendiente de ${formatCurrency(r.balance)} de tu compra del ${formatDate(r.sale_date)}. ¿Cuándo lo podemos cuadrar? 😊`
+                const waMsg = `Hola ${r.client_name.split(" ")[0]} Espero que estés disfrutando muchísimo tus productos. Te escribo porque quedó un pendiente del saldo de tu última compra y quiero tenerlo al día para seguir consintiéndote como te mereces ✨ ¿Te comparto el número de cuenta y quedamos al día? 🌸`
                 const isAbono = abonoId === r.sale_id
 
                 return (

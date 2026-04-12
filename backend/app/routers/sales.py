@@ -85,7 +85,15 @@ async def create_sale(sale: SaleRequest, request: Request):
         if existing.data:
             return {"venta": created_sale, "items": items, "followups": []}
 
-        followups = build_followup_schedule(sale.client_id, created_sale["id"], user_id)
+        # Cancel pending prospect followups (no sale_id) before starting the customer cycle
+        supabase.table("followups") \
+            .update({"status": "cancelled"}) \
+            .eq("client_id", sale.client_id) \
+            .eq("status", "pending") \
+            .is_("sale_id", "null") \
+            .execute()
+
+        followups = build_followup_schedule(sale.client_id, user_id, created_sale["id"])
         supabase.table("followups").insert(followups).execute()
 
         if initial > 0:

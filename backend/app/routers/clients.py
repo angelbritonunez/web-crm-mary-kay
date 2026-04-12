@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header, HTTPException
 from typing import Optional
 from app.db import supabase
 from app.schemas.clients import ClientRequest, VALID_SKIN_TYPES, VALID_STATUS
+from app.services.followup_service import build_followup_schedule
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
@@ -21,6 +22,13 @@ def create_client(client: ClientRequest, x_user_id: Optional[str] = Header(None)
         payload = client.dict()
         payload["user_id"] = x_user_id
         res = supabase.table("clients").insert(payload).execute()
+        created = res.data[0] if res.data else None
+
+        # Prospects with followup_enabled get their own 2+2+2 cycle (no sale_id)
+        if created and client.status == "prospect" and client.followup_enabled:
+            followups = build_followup_schedule(created["id"], x_user_id)
+            supabase.table("followups").insert(followups).execute()
+
         return res.data
     except Exception as e:
         return {"error": str(e)}
