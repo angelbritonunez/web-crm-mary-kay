@@ -4,24 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createSale, getClients, getProducts } from "@/lib/api"
 import { Eye, EyeOff, Search, X } from "lucide-react"
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type Product = {
-  id: string
-  name: string
-  price: number
-  category: string
-}
-
-type SelectedProduct = Product & { quantity: number }
-
-type ClientItem = {
-  id: string
-  name: string
-  phone: string
-  status: string
-}
+import type { Product, SelectedProduct, ClientItem } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

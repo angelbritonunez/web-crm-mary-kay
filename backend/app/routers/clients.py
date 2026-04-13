@@ -3,14 +3,14 @@ from typing import Optional
 from app.db import supabase
 from app.schemas.clients import ClientRequest, VALID_SKIN_TYPES, VALID_STATUS
 from app.services.followup_service import build_followup_schedule
+from app.utils import require_user_id
 
 router = APIRouter(prefix="/clients", tags=["clients"])
 
 
 @router.post("")
 def create_client(client: ClientRequest, x_user_id: Optional[str] = Header(None)):
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing x-user-id")
+    require_user_id(x_user_id)
 
     if client.skin_type not in VALID_SKIN_TYPES:
         raise HTTPException(status_code=400, detail="Tipo de piel inválido")
@@ -30,14 +30,16 @@ def create_client(client: ClientRequest, x_user_id: Optional[str] = Header(None)
             supabase.table("followups").insert(followups).execute()
 
         return res.data
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"error": str(e)}
+        print("ERROR CLIENTS:", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.get("")
 def get_clients(x_user_id: Optional[str] = Header(None)):
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing x-user-id")
+    require_user_id(x_user_id)
 
     response = supabase.table("clients") \
         .select("*") \
@@ -49,8 +51,7 @@ def get_clients(x_user_id: Optional[str] = Header(None)):
 
 @router.patch("/{client_id}")
 def update_client(client_id: str, client: ClientRequest, x_user_id: Optional[str] = Header(None)):
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing x-user-id")
+    require_user_id(x_user_id)
 
     # Ownership check: double .eq on user_id acts as authorization guard
     existing = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
@@ -70,8 +71,7 @@ def update_client(client_id: str, client: ClientRequest, x_user_id: Optional[str
 
 @router.delete("/{client_id}")
 def delete_client(client_id: str, x_user_id: Optional[str] = Header(None)):
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing x-user-id")
+    require_user_id(x_user_id)
 
     existing = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", x_user_id).execute()
     if not existing.data:

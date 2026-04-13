@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Users, UserCheck, UserX, Plus, RefreshCw, MessageCircle, ToggleLeft, ToggleRight, X } from "lucide-react"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+import type { Role, AdminUser } from "@/types"
 
-type Role = "consultora" | "admin" | "operador"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 function formatPhoneInput(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10)
@@ -17,21 +17,6 @@ function formatPhoneInput(value: string): string {
   if (digits.length <= 3) return p1
   if (digits.length <= 6) return `(${p1}) ${p2}`
   return `(${p1}) ${p2}-${p3}`
-}
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-type AdminUser = {
-  id: string
-  email: string
-  first_name: string | null
-  last_name: string | null
-  role: Role
-  is_active: boolean
-  notes: string | null
-  created_at: string
-  last_sign_in_at: string | null
-  days_remaining: number | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -284,15 +269,15 @@ function CredentialsModal({ email, password, phone, firstName, onClose }: {
 }) {
   const loginUrl = typeof window !== "undefined" ? `${window.location.origin}/login` : "/login"
   const waMessage = [
-    `\u00A1Hola, ${firstName}! Te damos la bienvenida a GlowSuite \uD83D\uDC84`,
+    `¡Hola, ${firstName}! Te damos la bienvenida a GlowSuite 💄`,
     ``,
     `Tus credenciales de acceso son:`,
-    `\uD83D\uDCE7 Email: ${email}`,
-    `\uD83D\uDD11 Contrase\u00F1a temporal: ${password}`,
+    `📧 Email: ${email}`,
+    `🔑 Contraseña temporal: ${password}`,
     ``,
-    `\uD83D\uDD17 Ingresa aqu\u00ED: ${loginUrl}`,
+    `🔗 Ingresa aquí: ${loginUrl}`,
     ``,
-    `Recuerda cambiar tu contrase\u00F1a al ingresar por primera vez.`,
+    `Recuerda cambiar tu contraseña al ingresar por primera vez.`,
   ].join("\n")
   const waMessageEncoded = encodeURIComponent(waMessage)
 

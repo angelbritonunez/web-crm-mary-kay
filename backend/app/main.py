@@ -1,15 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import supabase
+from app.config import ALLOWED_ORIGIN
 
 from app.routers import clients, products, sales, followups, metrics, dashboard, admin, auth
 
 app = FastAPI()
 
-# TODO: restrict allow_origins to the frontend domain in production
+allowed_origins = ["*"] if ALLOWED_ORIGIN == "*" else [ALLOWED_ORIGIN]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

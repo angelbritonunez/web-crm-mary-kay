@@ -3,30 +3,7 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getFollowups, getReceivables, completeFollowup, updateFollowup, addPayment } from "@/lib/api"
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type Followup = {
-  id: string
-  type: "day2" | "week2" | "month2"
-  scheduled_date: string
-  client_name: string
-  client_status: string
-  phone: string
-  mensaje: string
-  bucket: "overdue" | "today" | "upcoming"
-}
-
-type Receivable = {
-  sale_id: string
-  client_name: string
-  client_phone: string
-  total: number
-  amount_paid: number
-  balance: number
-  status: string
-  sale_date: string
-}
+import type { WorkspaceFollowup, Receivable } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -79,7 +56,7 @@ function FollowupsContent() {
 
   const [tab, setTab]             = useState<"seguimientos" | "cobros">(initialTab)
   const [filter, setFilter]       = useState<"overdue" | "today" | "upcoming" | "all">("all")
-  const [followups, setFollowups] = useState<Followup[]>([])
+  const [followups, setFollowups] = useState<WorkspaceFollowup[]>([])
   const [receivables, setReceivables] = useState<Receivable[]>([])
   const [totalOwed, setTotalOwed] = useState(0)
   const [loading, setLoading]     = useState(true)
@@ -113,7 +90,7 @@ function FollowupsContent() {
         if (data.error) {
           console.error("Error en seguimientos:", data.error)
         } else {
-          const all: Followup[] = [
+          const all: WorkspaceFollowup[] = [
             ...(data.overdue  || []).map((f: any) => ({ ...f, bucket: "overdue"  as const })),
             ...(data.today    || []).map((f: any) => ({ ...f, bucket: "today"    as const })),
             ...(data.upcoming || []).map((f: any) => ({ ...f, bucket: "upcoming" as const })),

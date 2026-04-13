@@ -3,40 +3,7 @@
 import { useEffect, useState } from "react"
 import { getMetrics } from "@/lib/api"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
-
-// ── Types ──────────────────────────────────────────────────────────────────────
-
-type Period = "week" | "month" | "last_month" | "year"
-
-type Summary = {
-  revenue: number
-  revenue_prev: number
-  profit: number
-  profit_prev: number
-  sales_count: number
-  sales_count_prev: number
-  new_clients: number
-  new_clients_prev: number
-  conversion_rate: number
-  monthly_goal: number | null
-}
-
-type ChartPoint = { date: string; revenue: number }
-type PaymentItem = { type: string; total: number; count: number }
-type ProductItem = { name: string; quantity: number; revenue: number }
-type FollowupStats = { sent: number; pending: number; converted: number; rate: number }
-type ClientPipeline = { prospects: number; customers: number; total: number }
-type SkinItem = { skin_type: string; count: number }
-
-type MetricsData = {
-  summary: Summary
-  revenue_chart: ChartPoint[]
-  by_payment_type: PaymentItem[]
-  top_products: ProductItem[]
-  followup_stats: FollowupStats
-  client_pipeline: ClientPipeline
-  skin_type_dist: SkinItem[]
-}
+import type { Period, MetricsData, ChartPoint, PaymentItem, ProductItem, FollowupStats, ClientPipeline, SkinItem, Summary } from "@/types"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 

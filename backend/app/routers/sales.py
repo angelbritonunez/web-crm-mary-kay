@@ -5,6 +5,7 @@ from app.db import supabase
 from app.schemas.sales import SaleRequest, PaymentRequest
 from app.services.sale_service import calculate_profit, determine_payment_status
 from app.services.followup_service import build_followup_schedule
+from app.utils import require_user_id
 
 router = APIRouter(tags=["sales"])
 
@@ -12,9 +13,7 @@ router = APIRouter(tags=["sales"])
 @router.post("/sales")
 async def create_sale(sale: SaleRequest, request: Request):
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id requerido")
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         client_res = supabase.table("clients") \
             .select("id, user_id, followup_enabled") \
@@ -109,18 +108,18 @@ async def create_sale(sale: SaleRequest, request: Request):
 
         return {"venta": created_sale, "items": items, "followups": followups}
 
+    except HTTPException:
+        raise
     except Exception as e:
-        print("ERROR BACKEND:", e)
-        return {"error": str(e)}
+        print("ERROR SALES:", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.post("/sales/{sale_id}/payments")
 async def add_payment(sale_id: str, payment: PaymentRequest, request: Request):
     """Records a partial or full payment. Amount is capped at the remaining balance."""
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id requerido")
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         if payment.payment_type not in ["efectivo", "transferencia"]:
             raise HTTPException(status_code=400, detail="Método de pago inválido")
@@ -175,17 +174,17 @@ async def add_payment(sale_id: str, payment: PaymentRequest, request: Request):
             "balance": round(total - new_paid, 2),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR PAYMENT:", e)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.get("/sales/{sale_id}/payments")
 async def get_payments(sale_id: str, request: Request):
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id requerido")
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         res = supabase.table("payments") \
             .select("id, amount, payment_type, payment_date, notes, created_at") \
@@ -196,18 +195,18 @@ async def get_payments(sale_id: str, request: Request):
 
         return {"payments": res.data or []}
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR GET PAYMENTS:", e)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.get("/receivables")
 async def get_receivables(request: Request):
     """Returns all sales with an outstanding balance (status pendiente or parcial)."""
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            raise HTTPException(status_code=400, detail="user_id requerido")
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         res = supabase.table("sales") \
             .select("id, total, amount_paid, status, payment_type, sale_date, created_at, clients(name, phone)") \
@@ -243,6 +242,8 @@ async def get_receivables(request: Request):
             "count": len(receivables),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR RECEIVABLES:", e)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail="Error interno del servidor")

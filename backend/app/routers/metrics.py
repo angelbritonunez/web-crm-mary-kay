@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from collections import defaultdict
 from app.db import supabase
+from app.utils import require_user_id
 
 router = APIRouter(prefix="/metrics", tags=["metrics"])
 
@@ -11,9 +12,7 @@ router = APIRouter(prefix="/metrics", tags=["metrics"])
 def followup_metrics(request: Request):
     """Conversion rate: how many sent followups resulted in a sale (source_followup_id set)."""
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            return {"error": "user_id requerido"}
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         sent = supabase.table("followups") \
             .select("id", count="exact") \
@@ -38,9 +37,11 @@ def followup_metrics(request: Request):
             "conversion_rate": conversion_rate,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
-        print("ERROR METRICS:", e)
-        return {"error": str(e)}
+        print("ERROR METRICS FOLLOWUPS:", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.get("")
@@ -50,9 +51,7 @@ def get_metrics(request: Request, period: str = "month"):
     Each period is compared against its equivalent prior period for growth indicators.
     """
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            return {"error": "user_id requerido"}
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         tz = ZoneInfo("America/Santo_Domingo")
         now = datetime.now(tz)
@@ -262,6 +261,8 @@ def get_metrics(request: Request, period: str = "month"):
             "skin_type_dist": skin_dist,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR METRICS:", e)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
