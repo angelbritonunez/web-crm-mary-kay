@@ -5,54 +5,9 @@ import { useParams, useRouter } from "next/navigation"
 import { ChevronDown } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { addPayment, getSalePayments, updateClient, deleteClient } from "@/lib/api"
+import type { Client, Sale, SaleItem, Payment, ClientFollowup } from "@/types"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-type Client = {
-  id: string
-  name: string
-  phone: string
-  email?: string | null
-  skin_type: string | null
-  status: string
-  followup_enabled: boolean
-  created_at: string
-}
-
-type SaleItem = {
-  quantity: number
-  price: number
-  product: { name: string } | null
-}
-
-type Sale = {
-  id: string
-  total: number
-  amount_paid: number
-  discount: number
-  payment_type: string
-  status: string
-  created_at: string
-  sale_date: string | null
-  notes: string | null
-  sale_items: SaleItem[]
-}
-
-type Payment = {
-  id: string
-  amount: number
-  payment_type: string
-  payment_date: string
-  notes: string | null
-}
-
-type Followup = {
-  id: string
-  type: string
-  scheduled_date: string
-  status: string
-  mensaje: string | null
-}
 
 type Tab = "info" | "sales" | "followups"
 
@@ -161,7 +116,7 @@ export default function ClientProfilePage() {
 
   const [client, setClient] = useState<Client | null>(null)
   const [sales, setSales] = useState<Sale[]>([])
-  const [followups, setFollowups] = useState<Followup[]>([])
+  const [followups, setFollowups] = useState<ClientFollowup[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>("sales")
   const [salePayments, setSalePayments] = useState<Record<string, Payment[]>>({})
@@ -262,7 +217,7 @@ export default function ClientProfilePage() {
 
       const fetchedSales = (salesRes.data as Sale[]) || []
       setSales(fetchedSales)
-      setFollowups((followupsRes.data as Followup[]) || [])
+      setFollowups((followupsRes.data as ClientFollowup[]) || [])
 
       // Fetch payment history for every sale that has at least one payment recorded
       const salesWithPayments = fetchedSales.filter((s) => Number(s.amount_paid) > 0)

@@ -4,15 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getClients } from "@/lib/api"
 import { Search } from "lucide-react"
-
-type Client = {
-  id: string
-  name: string
-  phone: string
-  status: string
-  skin_type: string | null
-  created_at: string
-}
+import type { Client } from "@/types"
 
 function formatPhone(phone: string): string {
   const digits = (phone || "").replace(/\D/g, "").slice(0, 10)

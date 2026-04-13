@@ -4,42 +4,7 @@ import { useEffect, useState } from "react"
 import { getDashboard } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-type FollowupItem = {
-  id: string
-  type: "day2" | "week2" | "month2"
-  scheduled_date: string
-  status: string
-  mensaje: string | null
-  client_name: string
-  client_phone: string
-  isOverdue: boolean
-}
-
-type ClientItem = {
-  id: string
-  name: string
-  phone: string
-  skin_type?: string | null
-  status: string
-}
-
-type DashboardData = {
-  firstName: string
-  followups: FollowupItem[]
-  clients: ClientItem[]
-  vencidos: number
-  totalPending: number
-  ventas_mes: number
-  revenue_mes: number
-  profit_mes: number
-  convPct: number
-  monthly_goal: number | null
-  total_owed: number
-  receivables_count: number
-}
+import type { DashboardData, DashboardFollowup, ClientItem } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -125,7 +90,7 @@ export default function Dashboard() {
     const init = async () => {
       try {
         const res = await getDashboard()
-        const followups: FollowupItem[] = (res.followups || []).map((f: any) => ({
+        const followups: DashboardFollowup[] = (res.followups || []).map((f: any) => ({
           id: f.id,
           type: f.type,
           scheduled_date: f.scheduled_date,
