@@ -3,6 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from typing import Optional
 from app.db import supabase
+from app.utils import require_user_id
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -13,8 +14,7 @@ def get_dashboard(x_user_id: Optional[str] = Header(None)):
     Aggregates all data needed for the main dashboard in a single request
     (followups, recent clients, month metrics, receivables).
     """
-    if not x_user_id:
-        raise HTTPException(status_code=400, detail="Missing x-user-id")
+    require_user_id(x_user_id)
 
     try:
         tz = ZoneInfo("America/Santo_Domingo")
@@ -104,6 +104,8 @@ def get_dashboard(x_user_id: Optional[str] = Header(None)):
             "receivables_count": len(receivables),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR DASHBOARD:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Error interno del servidor")

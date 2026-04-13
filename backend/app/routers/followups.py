@@ -2,6 +2,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from typing import Optional
 from app.db import supabase
 from app.services.followup_service import generate_message, categorize_followups
+from app.utils import require_user_id
 
 router = APIRouter(prefix="/followups", tags=["followups"])
 
@@ -9,9 +10,7 @@ router = APIRouter(prefix="/followups", tags=["followups"])
 @router.get("")
 def get_followups(request: Request):
     try:
-        user_id = request.headers.get("x-user-id")
-        if not user_id:
-            return {"error": "user_id requerido en header x-user-id"}
+        user_id = require_user_id(request.headers.get("x-user-id"))
 
         # clients!inner excludes orphaned followups with no associated client row
         res = supabase.table("followups") \
@@ -43,14 +42,31 @@ def get_followups(request: Request):
             "total": sum(len(v) for v in categorized.values()),
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         print("ERROR FOLLOWUPS:", e)
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
 @router.post("/{followup_id}/complete")
-def complete_followup(followup_id: str):
+def complete_followup(followup_id: str, x_user_id: Optional[str] = Header(None)):
     """Called when the consultant sends the WhatsApp message manually."""
+    user_id = require_user_id(x_user_id)
+
+    existing = supabase.table("followups") \
+        .select("id, client_id") \
+        .eq("id", followup_id) \
+        .execute()
+
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Seguimiento no encontrado")
+
+    client_id = existing.data[0]["client_id"]
+    owner = supabase.table("clients").select("id").eq("id", client_id).eq("user_id", user_id).execute()
+    if not owner.data:
+        raise HTTPException(status_code=403, detail="No autorizado")
+
     res = supabase.table("followups") \
         .update({"status": "sent"}) \
         .eq("id", followup_id) \
