@@ -28,7 +28,7 @@ const inputClass =
 const labelClass =
   "block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
 
-const CATEGORIES = ["Todos", "skincare", "makeup"]
+const CATEGORIES = ["Todos", "skincare", "makeup", "fragancia"]
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
