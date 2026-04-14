@@ -42,6 +42,9 @@ export function useAuth() {
       try {
         profile = await getMe(session.user.id)
       } catch (e: any) {
+        // Network error (backend down/cold start): keep the session alive, don't sign out
+        if (!e.status) return
+        // 403 means account disabled by admin
         await supabase.auth.signOut()
         router.push(e.status === 403 ? "/login?desactivado=1" : "/login")
         return
@@ -75,6 +78,7 @@ export function useAuth() {
           router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
         }
       } catch (e: any) {
+        if (!e.status) return
         await supabase.auth.signOut()
         router.push(e.status === 403 ? "/login?desactivado=1" : "/login")
       }
