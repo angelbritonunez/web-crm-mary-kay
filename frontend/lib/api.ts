@@ -86,6 +86,16 @@ export const deleteClient = async (clientId: string) => {
 }
 
 // SALES
+export const deleteSale = async (saleId: string) => {
+  const userId = await getUserId()
+  const res = await fetch(`${API_URL}/sales/${saleId}`, {
+    method: "DELETE",
+    headers: { "x-user-id": userId },
+  })
+  if (!res.ok) throw new Error("Error eliminando venta")
+  return res.json()
+}
+
 export const createSale = async (data: {
   client_id: string
   total: number

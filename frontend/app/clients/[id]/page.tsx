@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { addPayment, getSalePayments, updateClient, deleteClient } from "@/lib/api"
+import { addPayment, getSalePayments, updateClient, deleteClient, deleteSale } from "@/lib/api"
 import type { Client, Sale, SaleItem, Payment, ClientFollowup } from "@/types"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -144,6 +144,10 @@ export default function ClientProfilePage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Delete sale flow
+  const [confirmDeleteSaleId, setConfirmDeleteSaleId] = useState<string | null>(null)
+  const [deletingSale, setDeletingSale] = useState(false)
+
   // Abono modal
   const [abonoSaleId, setAbonoSaleId] = useState<string | null>(null)
   const [abonoAmount, setAbonoAmount] = useState<string>("")
@@ -237,6 +241,24 @@ export default function ClientProfilePage() {
 
     init()
   }, [id])
+
+  const handleDeleteSale = async (saleId: string) => {
+    setDeletingSale(true)
+    try {
+      await deleteSale(saleId)
+      setSales((prev) => prev.filter((s) => s.id !== saleId))
+      setConfirmDeleteSaleId(null)
+      // Revert client status in UI if no sales remain
+      if (sales.length === 1) {
+        setClient((prev) => prev ? { ...prev, status: "prospect" } : prev)
+        setStatus("prospect")
+      }
+    } catch {
+      // silently ignore — sale remains visible
+    } finally {
+      setDeletingSale(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!client) return
@@ -714,6 +736,41 @@ export default function ClientProfilePage() {
                               </div>
                             </div>
                           )}
+
+                          {/* Delete sale */}
+                          <div className="pt-1 border-t border-gray-50">
+                            {confirmDeleteSaleId === sale.id ? (
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs text-gray-500">
+                                  {Number(sale.amount_paid) > 0
+                                    ? `Se eliminarán esta venta, sus abonos y seguimientos asociados.`
+                                    : `Se eliminarán esta venta y sus seguimientos asociados.`}
+                                  {` Esta acción no se puede deshacer.`}
+                                </span>
+                                <button
+                                  onClick={() => handleDeleteSale(sale.id)}
+                                  disabled={deletingSale}
+                                  className="text-xs bg-red-500 text-white rounded-lg px-3 py-1.5 font-semibold hover:bg-red-600 disabled:opacity-50 transition"
+                                >
+                                  {deletingSale ? "Eliminando..." : "Confirmar"}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteSaleId(null)}
+                                  className="text-xs text-gray-400 hover:text-gray-600"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => { setConfirmDeleteSaleId(sale.id); setAbonoSaleId(null) }}
+                                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition"
+                              >
+                                <Trash2 size={12} />
+                                Eliminar venta
+                              </button>
+                            )}
+                          </div>
 
                           {/* Abono action */}
                           {sale.status !== "pagado" && (

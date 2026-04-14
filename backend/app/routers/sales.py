@@ -202,6 +202,49 @@ async def get_payments(sale_id: str, request: Request):
         raise HTTPException(status_code=500, detail="Error interno del servidor")
 
 
+@router.delete("/sales/{sale_id}")
+async def delete_sale(sale_id: str, request: Request):
+    try:
+        user_id = require_user_id(request.headers.get("x-user-id"))
+
+        sale_res = supabase.table("sales") \
+            .select("id, client_id, user_id") \
+            .eq("id", sale_id) \
+            .single() \
+            .execute()
+
+        if not sale_res.data:
+            raise HTTPException(status_code=404, detail="Venta no encontrada")
+        if sale_res.data["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Venta no pertenece al usuario")
+
+        client_id = sale_res.data["client_id"]
+
+        supabase.table("payments").delete().eq("sale_id", sale_id).execute()
+        supabase.table("followups").delete().eq("sale_id", sale_id).execute()
+        supabase.table("sale_items").delete().eq("sale_id", sale_id).execute()
+        supabase.table("sales").delete().eq("id", sale_id).execute()
+
+        # Revert client to prospect if they have no remaining sales
+        remaining = supabase.table("sales") \
+            .select("id") \
+            .eq("client_id", client_id) \
+            .execute()
+        if not remaining.data:
+            supabase.table("clients") \
+                .update({"status": "prospect"}) \
+                .eq("id", client_id) \
+                .execute()
+
+        return {"message": "Venta eliminada"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("ERROR DELETE SALE:", e)
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+
 @router.get("/receivables")
 async def get_receivables(request: Request):
     """Returns all sales with an outstanding balance (status pendiente or parcial)."""
