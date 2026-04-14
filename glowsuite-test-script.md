@@ -28,7 +28,12 @@ Marca cada punto con ✅ si funciona bien, o anota qué pasó si algo falla.
 - [ ] Si tienes una meta mensual configurada, aparece la barra de progreso debajo del hero
 - [ ] Si tienes seguimientos vencidos, aparece el aviso rosa con el conteo → al tocarlo va a la pestaña Seguimientos
 - [ ] Si tienes ventas con saldo pendiente, aparece el aviso naranja de cuentas por cobrar → al tocarlo va a la pestaña Cobros
-- [ ] En "Seguimientos del día" aparecen los primeros 3 más urgentes con nombre, mensaje y botón de WhatsApp
+- [ ] En "Seguimientos del día" aparecen los primeros 3 más urgentes con nombre, tipo (2 días / 2 semanas / 2 meses) y mensaje
+- [ ] Cada card muestra el badge de estado de la clienta (Cliente / Prospecto)
+- [ ] El botón "Enviar por WhatsApp" abre el chat con el mensaje listo
+- [ ] El botón "Editar mensaje" muestra un campo de texto con el mensaje
+- [ ] Al guardar el mensaje editado, la card se actualiza sin recargar la página
+- [ ] El botón "Marcar enviado" elimina la card del mini-listado del Dashboard
 - [ ] Si hay más de 3, aparece el link "Ver X más" que lleva a /followups
 - [ ] La columna derecha muestra las últimas clientas registradas con su estado (Cliente / Prospecto)
 - [ ] Al tocar una clienta de la lista va a su perfil
@@ -125,8 +130,11 @@ Esta pantalla tiene dos pestañas en una sola vista.
 - [ ] La pestaña muestra el conteo de cobros pendientes en el badge naranja
 - [ ] Aparece el resumen: total de ventas con saldo y monto total adeudado
 - [ ] Cada tarjeta muestra: nombre de la clienta, teléfono, fecha de compra, saldo pendiente, total de la venta y estado (Sin pago / Abono parcial)
-- [ ] Cada tarjeta muestra el badge del estado de la clienta (Cliente / Prospecto)
-- [ ] El botón "Enviar cobro por WhatsApp" abre WhatsApp con un mensaje de cobro listo
+- [ ] Cada tarjeta muestra el badge **"Cliente"**
+- [ ] Cada tarjeta muestra el preview del mensaje de cobro
+- [ ] El botón "Editar mensaje" abre un campo de texto para modificar el mensaje de cobro
+- [ ] Al guardar el mensaje editado, la tarjeta se actualiza sin recargar la página
+- [ ] El botón "Enviar cobro por WhatsApp" abre WhatsApp con el mensaje (editado o por defecto)
 - [ ] El botón "Registrar abono" abre un formulario inline con campo de monto y selector de método (Efectivo / Transferencia)
 - [ ] El monto del abono no puede superar el saldo pendiente
 - [ ] Al guardar el abono, el saldo se actualiza en la tarjeta sin recargar la página

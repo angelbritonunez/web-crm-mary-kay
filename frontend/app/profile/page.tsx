@@ -27,25 +27,6 @@ const labelClass =
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StatusMsg({
-  type,
-  msg,
-}: {
-  type: "error" | "success"
-  msg: string
-}) {
-  if (type === "error")
-    return (
-      <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg px-4 py-3">
-        {msg}
-      </div>
-    )
-  return (
-    <div className="bg-green-50 border border-green-100 text-green-700 text-sm rounded-lg px-4 py-3">
-      {msg}
-    </div>
-  )
-}
 
 function SaveButton({
   onClick,
@@ -53,15 +34,22 @@ function SaveButton({
   disabled,
   label = "Guardar cambios",
   savingLabel = "Guardando...",
+  status,
 }: {
   onClick: () => void
   saving: boolean
   disabled: boolean
   label?: string
   savingLabel?: string
+  status?: { type: "error" | "success"; msg: string } | null
 }) {
   return (
-    <div className="flex justify-end pt-1">
+    <div className="flex items-center justify-end gap-3 pt-1">
+      {status && (
+        <span className={`text-xs font-medium ${status.type === "error" ? "text-red-500" : "text-green-600"}`}>
+          {status.msg}
+        </span>
+      )}
       <button
         type="button"
         onClick={onClick}
@@ -381,10 +369,6 @@ function ProfileContent() {
             </p>
           </div>
           <div className="px-5 py-5 space-y-4">
-            {infoStatus && (
-              <StatusMsg type={infoStatus.type} msg={infoStatus.msg} />
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>
@@ -442,6 +426,7 @@ function ProfileContent() {
               onClick={handleSaveInfo}
               saving={savingInfo}
               disabled={!infoIsDirty}
+              status={infoStatus}
             />
           </div>
         </div>
@@ -455,7 +440,6 @@ function ProfileContent() {
             </p>
           </div>
           <div className="px-5 py-5 space-y-4">
-            {goalStatus && <StatusMsg type={goalStatus.type} msg={goalStatus.msg} />}
             <div>
               <label className={labelClass}>Meta mensual (DOP)</label>
               <div className="relative">
@@ -482,6 +466,7 @@ function ProfileContent() {
               disabled={monthlyGoal === originalGoal}
               label="Guardar meta"
               savingLabel="Guardando..."
+              status={goalStatus}
             />
           </div>
         </div>
@@ -497,10 +482,6 @@ function ProfileContent() {
             </p>
           </div>
           <div className="px-5 py-5 space-y-4">
-            {passwordStatus && (
-              <StatusMsg type={passwordStatus.type} msg={passwordStatus.msg} />
-            )}
-
             <div>
               <label className={labelClass}>Contraseña actual</label>
               <input
@@ -541,6 +522,7 @@ function ProfileContent() {
               disabled={!passwordReady}
               label="Actualizar contraseña"
               savingLabel="Actualizando..."
+              status={passwordStatus}
             />
           </div>
         </div>

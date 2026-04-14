@@ -418,16 +418,6 @@ export default function ClientProfilePage() {
           {activeTab === "info" && (
             <div className="px-6 py-5 space-y-5">
 
-              {saveError && (
-                <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg px-4 py-3">
-                  {saveError}
-                </div>
-              )}
-              {saveSuccess && (
-                <div className="bg-green-50 border border-green-100 text-green-700 text-sm rounded-lg px-4 py-3">
-                  Cambios guardados correctamente.
-                </div>
-              )}
 
               {/* Row 1: Nombre + Teléfono */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -465,14 +455,12 @@ export default function ClientProfilePage() {
                 </div>
                 <div>
                   <label className={labelClass}>Estado</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="prospect">Prospecto — no ha comprado</option>
-                    <option value="customer">Cliente — ya compró</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={status === "customer" ? "Cliente" : "Prospecto"}
+                    disabled
+                    className={`${inputClass} cursor-not-allowed opacity-100`}
+                  />
                 </div>
               </div>
 
@@ -567,17 +555,25 @@ export default function ClientProfilePage() {
                 </div>
 
                 {/* Save */}
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className={`rounded-lg px-5 py-2 text-sm font-semibold text-white transition ${
-                    saving
-                      ? "bg-[#E75480]/40 cursor-not-allowed"
-                      : "bg-[#E75480] hover:bg-[#d04070]"
-                  }`}
-                >
-                  {saving ? "Guardando..." : "Guardar cambios"}
-                </button>
+                <div className="flex items-center gap-3">
+                  {saveError && (
+                    <span className="text-xs text-red-500">{saveError}</span>
+                  )}
+                  {saveSuccess && (
+                    <span className="text-xs text-green-600 font-medium">Cambios guardados</span>
+                  )}
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`rounded-lg px-5 py-2 text-sm font-semibold text-white transition ${
+                      saving
+                        ? "bg-[#E75480]/40 cursor-not-allowed"
+                        : "bg-[#E75480] hover:bg-[#d04070]"
+                    }`}
+                  >
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                </div>
 
               </div>
             </div>

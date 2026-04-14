@@ -36,7 +36,7 @@ export default function NewClientPage() {
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
-  const [status, setStatus] = useState("prospect")
+  const status = "prospect"
   const [skinType, setSkinType] = useState("")
   const [followupEnabled, setFollowupEnabled] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -159,15 +159,14 @@ export default function NewClientPage() {
 
               <div>
                 <label className={labelClass}>Estado</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="prospect">Prospecto — no ha comprado</option>
-                  <option value="customer">Cliente — ya compró</option>
-                </select>
+                <input
+                  type="text"
+                  value="Prospecto"
+                  disabled
+                  className={`${inputClass} cursor-not-allowed opacity-100`}
+                />
               </div>
+
             </div>
 
             {/* ── Row 3: Tipo de piel ── */}

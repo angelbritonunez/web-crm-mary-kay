@@ -83,19 +83,23 @@ def get_metrics(request: Request, period: str = "month"):
         prev_start_iso = prev_range_start.isoformat()
         prev_end_iso = prev_range_end.isoformat()
 
-        sales_res = supabase.table("sales") \
+        all_sales_res = supabase.table("sales") \
             .select("id, total, profit, payment_type, created_at, sale_date") \
             .eq("user_id", user_id) \
-            .gte("created_at", start_iso) \
-            .lte("created_at", end_iso) \
             .execute()
 
-        prev_sales_res = supabase.table("sales") \
-            .select("id, total, profit") \
-            .eq("user_id", user_id) \
-            .gte("created_at", prev_start_iso) \
-            .lte("created_at", prev_end_iso) \
-            .execute()
+        def effective_date(s: dict) -> str:
+            """sale_date (manual entry) takes precedence over created_at."""
+            return s.get("sale_date") or s.get("created_at", "")[:10]
+
+        start_date = range_start.date().isoformat()
+        end_date = range_end.date().isoformat()
+        prev_start_date = prev_range_start.date().isoformat()
+        prev_end_date = prev_range_end.date().isoformat()
+
+        all_sales = all_sales_res.data or []
+        sales_res_data = [s for s in all_sales if start_date <= effective_date(s) <= end_date]
+        prev_sales_res_data = [s for s in all_sales if prev_start_date <= effective_date(s) <= prev_end_date]
 
         profile_res = supabase.table("profiles") \
             .select("monthly_goal") \
@@ -133,8 +137,8 @@ def get_metrics(request: Request, period: str = "month"):
             .not_.is_("source_followup_id", None) \
             .execute()
 
-        sales = sales_res.data or []
-        prev_sales = prev_sales_res.data or []
+        sales = sales_res_data
+        prev_sales = prev_sales_res_data
         all_clients = clients_res.data or []
         monthly_goal = (profile_res.data or {}).get("monthly_goal")
 
