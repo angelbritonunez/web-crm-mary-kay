@@ -52,7 +52,7 @@ export default function NewSaleContent() {
 
   // Form extras
   const [paymentType, setPaymentType] = useState("efectivo")
-  const [discount, setDiscount] = useState<number | "">("")
+  const [discount, setDiscount] = useState<string>("")
   const [discountAmount, setDiscountAmount] = useState<string>("")
   const [notes, setNotes] = useState("")
   const [saleDate, setSaleDate] = useState(
@@ -157,7 +157,7 @@ export default function NewSaleContent() {
     (acc, p) => acc + p.price * p.quantity,
     0
   )
-  const discountValue = Math.min(50, Number(discount) || 0)
+  const discountValue = Math.min(50, parseFloat(discount) || 0)
   const total = Math.max(0, subtotal - (subtotal * discountValue) / 100)
   const profit = total - subtotal * 0.5
 
@@ -589,10 +589,15 @@ export default function NewSaleContent() {
                           setDiscountAmount("")
                           return
                         }
-                        let n = Number(v)
-                        if (n < 0) n = 0
+                        // Allow intermediate decimal state (e.g. "12.")
+                        if (v.endsWith(".")) {
+                          setDiscount(v)
+                          return
+                        }
+                        let n = parseFloat(v)
+                        if (isNaN(n) || n < 0) n = 0
                         if (n > 50) n = 50
-                        setDiscount(n)
+                        setDiscount(String(n))
                         setDiscountAmount(
                           subtotal > 0 ? ((subtotal * n) / 100).toFixed(2) : ""
                         )
@@ -622,7 +627,7 @@ export default function NewSaleContent() {
                         if (subtotal > 0) {
                           let pct = (amt / subtotal) * 100
                           if (pct > 50) pct = 50
-                          setDiscount(Math.round(pct * 100) / 100)
+                          setDiscount(String(Math.round(pct * 100) / 100))
                         }
                       }}
                       placeholder="0.00"
