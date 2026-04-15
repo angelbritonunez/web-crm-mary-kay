@@ -45,6 +45,15 @@ def get_me(x_user_id: Optional[str] = Header(None)):
                     detail="Tu membresía ha vencido. Comunícate con tu administrador para renovarla."
                 )
 
+    # Track last activity — fire-and-forget, never fail the request
+    try:
+        supabase.table("profiles") \
+            .update({"last_seen_at": datetime.now(timezone.utc).isoformat()}) \
+            .eq("id", x_user_id) \
+            .execute()
+    except Exception:
+        pass
+
     return {
         "role": profile["role"],
         "must_change_password": profile.get("must_change_password", False),

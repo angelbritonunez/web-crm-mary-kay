@@ -55,26 +55,6 @@ def generate_password(length: int = 10) -> str:
     return "".join(random.choices(chars, k=length))
 
 
-def _fetch_auth_sign_ins() -> dict:
-    """Returns {user_id: last_sign_in_at} for all auth users, paginating as needed."""
-    result = {}
-    try:
-        page = 1
-        while True:
-            batch = supabase.auth.admin.list_users(page=page, per_page=50)
-            if not batch:
-                break
-            for u in batch:
-                result[str(u.id)] = u.last_sign_in_at
-            if len(batch) < 50:
-                break
-            page += 1
-    except Exception as e:
-        print(f"ERROR _fetch_auth_sign_ins: {e}")
-    print(f"DEBUG _fetch_auth_sign_ins: {len(result)} users fetched, ids={list(result.keys())[:5]}")
-    return result
-
-
 # ── Schemas ────────────────────────────────────────────────────────────────────
 
 class CreateUserRequest(BaseModel):
@@ -99,7 +79,7 @@ def list_users(x_user_id: Optional[str] = Header(None)):
     _deactivate_expired_consultoras()
 
     query = supabase.table("profiles").select(
-        "id, email, first_name, last_name, role, is_active, notes, created_at, activated_at"
+        "id, email, first_name, last_name, role, is_active, notes, created_at, activated_at, last_seen_at"
     )
     # Operador only sees consultoras
     if caller_role == "operador":
@@ -107,14 +87,11 @@ def list_users(x_user_id: Optional[str] = Header(None)):
     profiles_res = query.execute()
     profiles = profiles_res.data or []
 
-    auth_users = _fetch_auth_sign_ins()
-
     result = []
     for p in profiles:
-        uid = p["id"]
         result.append({
             **p,
-            "last_sign_in_at": auth_users.get(uid),
+            "last_sign_in_at": p.get("last_seen_at"),
             "days_remaining":  _days_remaining(p.get("activated_at"), p.get("role", "")),
         })
 
@@ -242,7 +219,7 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
 
     # ── 1. Platform stats ─────────────────────────────────────────────────────
     profiles_res = supabase.table("profiles").select(
-        "id, first_name, last_name, email, role, is_active, activated_at"
+        "id, first_name, last_name, email, role, is_active, activated_at, last_seen_at"
     ).execute()
     profiles = profiles_res.data or []
 
@@ -307,8 +284,6 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
             cur = cur.replace(month=cur.month + 1)
 
     # ── 4. Per-consultora breakdown ───────────────────────────────────────────
-    auth_users = _fetch_auth_sign_ins()
-    print(f"DEBUG dashboard: consultora ids={[p['id'] for p in consultoras][:5]}")
 
     sales_per_user: dict = defaultdict(lambda: {"count": 0, "revenue": 0.0})
     for s in sales_month:
@@ -336,7 +311,7 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
             "sales_count": s["count"],
             "revenue": round(s["revenue"], 2),
             "total_customers": customers_per_user.get(uid, 0),
-            "last_sign_in": auth_users.get(uid),
+            "last_sign_in": p.get("last_seen_at"),
             "days_remaining": _days_remaining(p.get("activated_at"), p.get("role", "")),
         })
     consultoras_breakdown.sort(key=lambda x: x["revenue"], reverse=True)
