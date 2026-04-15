@@ -68,6 +68,20 @@ Most data mutations go through FastAPI, but some reads query Supabase directly f
 - **Timezone:** All scheduled dates use America/Santo_Domingo timezone.
 - **Products table:** Referenced in `sale_items` joins; managed directly in Supabase (no backend CRUD endpoint).
 
+### Subscription Plans
+
+Three tiers: `free` | `basic` | `pro`. Stored in `profiles.subscription_plan`.
+
+- **Hook:** `hooks/usePlan.ts` — exposes `{ plan, loading, can(requiredPlan) }`. Read plan from Supabase directly (no backend call).
+- **Guard pattern:** `if (!planLoading && !can("basic")) return <UpgradeBanner requiredPlan="basic" />`
+- **UpgradeBanner** (`components/UpgradeBanner.tsx`) — calls `usePlan()` internally; shows current plan + required plan. No props needed beyond `requiredPlan`.
+- **Plan visibility standard:** the consultora must always know her current plan. Two mandatory touchpoints:
+  1. `UpgradeBanner` — "Estás en el plan **X**. Esta función está disponible a partir del plan **Y**."
+  2. Profile header (`/profile`) — badge de plan junto al badge de rol (solo visible para consultoras).
+- **Plan colors:** Free → gray, Basic → blue, Pro → pink (`#E75480`)
+- **Feature matrix:** Free = clientes/ventas/seguimientos básicos; Basic adds crédito, ganancias, workspace; Pro adds métricas avanzadas, WhatsApp, link registro, agenda.
+- **Assignment:** manual por operador/admin desde `/operador/users` — sin pasarela de pago por ahora.
+
 ### Styling Conventions
 
 - Tailwind CSS 4 with a custom pink theme (`#E75480`)
