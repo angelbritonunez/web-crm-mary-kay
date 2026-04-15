@@ -1,6 +1,7 @@
 "use client"
 
 import { Lock } from "lucide-react"
+import { usePlan } from "@/hooks/usePlan"
 import type { SubscriptionPlan } from "@/types"
 
 const PLAN_LABELS: Record<SubscriptionPlan, string> = {
@@ -24,6 +25,7 @@ const WA_MESSAGES: Record<SubscriptionPlan, string> = {
 const ADMIN_PHONE = "18499259226"
 
 export default function UpgradeBanner({ requiredPlan }: { requiredPlan: Exclude<SubscriptionPlan, "free"> }) {
+  const { plan } = usePlan()
   const waUrl = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(WA_MESSAGES[requiredPlan])}`
 
   return (
@@ -37,7 +39,11 @@ export default function UpgradeBanner({ requiredPlan }: { requiredPlan: Exclude<
       </h2>
 
       <p className="text-sm text-gray-400 mb-1 max-w-sm">
-        Esta función está disponible a partir del plan{" "}
+        Estás en el plan{" "}
+        <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_COLORS[plan]}`}>
+          {PLAN_LABELS[plan]}
+        </span>
+        . Esta función está disponible a partir del plan{" "}
         <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_COLORS[requiredPlan]}`}>
           {PLAN_LABELS[requiredPlan]}
         </span>
