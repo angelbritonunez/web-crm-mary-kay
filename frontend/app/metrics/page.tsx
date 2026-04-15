@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import { getMetrics } from "@/lib/api"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { usePlan } from "@/hooks/usePlan"
+import UpgradeBanner from "@/components/UpgradeBanner"
 import type { Period, MetricsData, ChartPoint, PaymentItem, ProductItem, FollowupStats, ClientPipeline, SkinItem, Summary } from "@/types"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -301,19 +303,23 @@ const PERIODS: { key: Period; label: string }[] = [
 ]
 
 export default function MetricsPage() {
+  const { plan, loading: planLoading, can } = usePlan()
   const [period, setPeriod] = useState<Period>("month")
   const [data, setData] = useState<MetricsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (planLoading || !can("pro")) return
     setLoading(true)
     setError(null)
     getMetrics(period)
       .then((d) => setData(d))
       .catch((e) => setError(e.message || "Error cargando métricas"))
       .finally(() => setLoading(false))
-  }, [period])
+  }, [period, plan, planLoading])
+
+  if (!planLoading && !can("pro")) return <UpgradeBanner requiredPlan="pro" />
 
   const s = data?.summary
 

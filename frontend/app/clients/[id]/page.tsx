@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ChevronDown, Trash2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { addPayment, getSalePayments, updateClient, deleteClient, deleteSale } from "@/lib/api"
+import { usePlan } from "@/hooks/usePlan"
 import type { Client, Sale, SaleItem, Payment, ClientFollowup } from "@/types"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ function FollowupTypeBadge({ type }: { type: string }) {
 export default function ClientProfilePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { can } = usePlan()
 
   const [client, setClient] = useState<Client | null>(null)
   const [sales, setSales] = useState<Sale[]>([])
@@ -775,8 +777,8 @@ export default function ClientProfilePage() {
                             </div>
                           )}
 
-                          {/* Abono action */}
-                          {sale.status !== "pagado" && (
+                          {/* Abono action (Basic+) */}
+                          {can("basic") && sale.status !== "pagado" && (
                             <div className="pt-1">
                               {abonoSaleId === sale.id ? (
                                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 space-y-2.5">

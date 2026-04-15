@@ -65,9 +65,13 @@ class CreateUserRequest(BaseModel):
     role: str = "consultora"
 
 
+SUBSCRIPTION_PLANS = ("free", "basic", "pro")
+
+
 class PatchUserRequest(BaseModel):
     is_active: Optional[bool] = None
     notes: Optional[str] = None
+    subscription_plan: Optional[str] = None
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -79,7 +83,7 @@ def list_users(x_user_id: Optional[str] = Header(None)):
     _deactivate_expired_consultoras()
 
     query = supabase.table("profiles").select(
-        "id, email, first_name, last_name, role, is_active, notes, created_at, activated_at, last_seen_at"
+        "id, email, first_name, last_name, role, is_active, notes, created_at, activated_at, last_seen_at, subscription_plan"
     )
     # Operador only sees consultoras
     if caller_role == "operador":
@@ -157,6 +161,10 @@ def patch_user(user_id: str, body: PatchUserRequest, x_user_id: Optional[str] = 
                 payload["activated_at"] = datetime.now(timezone.utc).isoformat()
     if body.notes is not None:
         payload["notes"] = body.notes
+    if body.subscription_plan is not None:
+        if body.subscription_plan not in SUBSCRIPTION_PLANS:
+            raise HTTPException(status_code=400, detail="Plan inválido. Opciones: free, basic, pro")
+        payload["subscription_plan"] = body.subscription_plan
 
     if not payload:
         raise HTTPException(status_code=400, detail="Nada que actualizar")
@@ -219,7 +227,7 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
 
     # ── 1. Platform stats ─────────────────────────────────────────────────────
     profiles_res = supabase.table("profiles").select(
-        "id, first_name, last_name, email, role, is_active, activated_at, last_seen_at"
+        "id, first_name, last_name, email, role, is_active, activated_at, last_seen_at, subscription_plan"
     ).execute()
     profiles = profiles_res.data or []
 
@@ -308,6 +316,7 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
             "name": name,
             "email": p["email"],
             "is_active": p["is_active"],
+            "subscription_plan": p.get("subscription_plan", "free"),
             "sales_count": s["count"],
             "revenue": round(s["revenue"], 2),
             "total_customers": customers_per_user.get(uid, 0),
@@ -316,12 +325,19 @@ def admin_dashboard(x_user_id: Optional[str] = Header(None)):
         })
     consultoras_breakdown.sort(key=lambda x: x["revenue"], reverse=True)
 
+    plans = {"free": 0, "basic": 0, "pro": 0}
+    for p in consultoras:
+        plan = p.get("subscription_plan", "free")
+        if plan in plans:
+            plans[plan] += 1
+
     return {
         "platform": {
             "total_users": total_users,
             "active": active_users,
             "inactive": inactive_users,
             "expiring_soon": expiring_soon,
+            "plans": plans,
         },
         "this_month": {
             "sales_count": sales_count,

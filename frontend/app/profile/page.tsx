@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter, useSearchParams } from "next/navigation"
+import { usePlan } from "@/hooks/usePlan"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ function ProfileContent() {
   const router       = useRouter()
   const searchParams = useSearchParams()
   const mustChange   = searchParams.get("mustChange") === "1"
+  const { can } = usePlan()
 
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState("")
@@ -431,8 +433,8 @@ function ProfileContent() {
           </div>
         </div>
 
-        {/* ── Metas de negocio (solo consultoras) ── */}
-        {role !== "admin" && role !== "operador" && <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        {/* ── Metas de negocio (consultoras Basic+) ── */}
+        {role !== "admin" && role !== "operador" && can("basic") && <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="border-b border-gray-50 px-5 py-4">
             <span className="text-sm font-semibold text-gray-800">Metas de negocio</span>
             <p className="text-xs text-gray-400 mt-0.5">

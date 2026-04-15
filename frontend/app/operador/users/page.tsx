@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Users, UserCheck, UserX, Plus, RefreshCw, MessageCircle, ToggleLeft, ToggleRight, X } from "lucide-react"
 
-import type { Role, AdminUser } from "@/types"
+import type { Role, AdminUser, SubscriptionPlan } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
@@ -72,6 +72,19 @@ const ROLE_STYLES: Record<Role, string> = {
   admin:      "bg-purple-50 text-purple-600",
   operador:   "bg-blue-50 text-blue-600",
 }
+
+const PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  free:  "Free",
+  basic: "Basic",
+  pro:   "Pro",
+}
+
+const PLAN_STYLES: Record<SubscriptionPlan, string> = {
+  free:  "bg-gray-100 text-gray-500",
+  basic: "bg-blue-50 text-blue-600",
+  pro:   "bg-[#FFF0F4] text-[#E75480]",
+}
+
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -328,7 +341,8 @@ export default function OperadorUsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [credentials, setCredentials] = useState<{ email: string; password: string; phone: string; firstName: string } | null>(null)
   const [search, setSearch]           = useState("")
-  const [togglingId, setTogglingId]   = useState<string | null>(null)
+  const [togglingId, setTogglingId]     = useState<string | null>(null)
+  const [changingPlanId, setChangingPlanId] = useState<string | null>(null)
   const [editingNotes, setEditingNotes] = useState<{ id: string; value: string } | null>(null)
   const [resetResult, setResetResult]     = useState<{ id: string; password: string } | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null) // user_id
@@ -370,6 +384,18 @@ export default function OperadorUsersPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleChangePlan = async (u: AdminUser, plan: SubscriptionPlan) => {
+    if (!userId || plan === u.subscription_plan) return
+    setChangingPlanId(u.id)
+    await fetch(`${API_URL}/admin/users/${u.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-user-id": userId },
+      body: JSON.stringify({ subscription_plan: plan }),
+    })
+    setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, subscription_plan: plan } : x))
+    setChangingPlanId(null)
   }
 
   const handleToggleActive = async (u: AdminUser) => {
@@ -504,6 +530,7 @@ export default function OperadorUsersPage() {
               <tr className="border-b border-gray-50">
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Usuario</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Rol</th>
+                <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Plan</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Último acceso</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Desde</th>
@@ -515,7 +542,7 @@ export default function OperadorUsersPage() {
             <tbody className="divide-y divide-gray-50">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-gray-400 text-sm">
+                  <td colSpan={9} className="text-center py-12 text-gray-400 text-sm">
                     {search.trim() ? "No se encontraron usuarios con ese nombre." : "No hay usuarios registrados."}
                   </td>
                 </tr>
@@ -541,6 +568,25 @@ export default function OperadorUsersPage() {
                       <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${ROLE_STYLES[u.role]}`}>
                         {ROLE_LABELS[u.role]}
                       </span>
+                    </td>
+                    {/* Plan */}
+                    <td className="px-4 py-3 text-center">
+                      {u.role === "consultora" ? (
+                        <select
+                          value={u.subscription_plan}
+                          disabled={changingPlanId === u.id}
+                          onChange={(e) => handleChangePlan(u, e.target.value as SubscriptionPlan)}
+                          className="text-xs font-semibold rounded-full px-2.5 py-0.5 border-0 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#E75480] disabled:opacity-50 transition"
+                          style={{ backgroundColor: u.subscription_plan === "pro" ? "#FFF0F4" : u.subscription_plan === "basic" ? "#EFF6FF" : "#F3F4F6",
+                                   color: u.subscription_plan === "pro" ? "#E75480" : u.subscription_plan === "basic" ? "#2563EB" : "#6B7280" }}
+                        >
+                          <option value="free">Free</option>
+                          <option value="basic">Basic</option>
+                          <option value="pro">Pro</option>
+                        </select>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
                     </td>
                     {/* Membresía */}
                     <td className="px-4 py-3 text-center">

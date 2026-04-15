@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getFollowups, getReceivables, completeFollowup, updateFollowup, addPayment } from "@/lib/api"
+import { usePlan } from "@/hooks/usePlan"
+import UpgradeBanner from "@/components/UpgradeBanner"
 import type { WorkspaceFollowup, Receivable } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -50,6 +52,7 @@ function WAIcon() {
 // ── Main content ──────────────────────────────────────────────────────────────
 
 function FollowupsContent() {
+  const { plan, loading: planLoading } = usePlan()
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialTab = searchParams.get("tab") === "cobros" ? "cobros" : "seguimientos"
@@ -162,6 +165,10 @@ function FollowupsContent() {
     today:    followups.filter((f) => f.bucket === "today").length,
     upcoming: followups.filter((f) => f.bucket === "upcoming").length,
   }
+
+  // ── Plan gate ─────────────────────────────────────────────────────────────
+
+  if (!planLoading && plan === "free") return <UpgradeBanner requiredPlan="basic" />
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
 

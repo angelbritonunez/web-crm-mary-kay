@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { getAdminDashboard } from "@/lib/api"
 import { Users, UserCheck, UserX, ShoppingBag, TrendingUp, UserPlus, Bell } from "lucide-react"
-import type { AdminDashboardData, AdminDashboardConsultora } from "@/types"
+import type { AdminDashboardData, AdminDashboardConsultora, SubscriptionPlan } from "@/types"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -102,6 +102,21 @@ function MonthlyTrendChart({ data }: { data: { month: string; revenue: number }[
   )
 }
 
+const PLAN_STYLES: Record<SubscriptionPlan, string> = {
+  free:  "bg-gray-100 text-gray-500",
+  basic: "bg-blue-50 text-blue-600",
+  pro:   "bg-[#FFF0F4] text-[#E75480]",
+}
+const PLAN_LABELS: Record<SubscriptionPlan, string> = { free: "Free", basic: "Basic", pro: "Pro" }
+
+function PlanBadge({ plan }: { plan: SubscriptionPlan }) {
+  return (
+    <span className={`text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_STYLES[plan]}`}>
+      {PLAN_LABELS[plan]}
+    </span>
+  )
+}
+
 function MembershipBadge({ days, isActive }: { days: number | null; isActive: boolean }) {
   if (!isActive) return <span className="text-xs text-gray-400 italic">Inactiva</span>
   if (days === null) return <span className="text-gray-300">—</span>
@@ -142,6 +157,7 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
           <thead>
             <tr className="border-b border-gray-50">
               <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Consultora</th>
+              <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Plan</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ventas mes</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ingresos mes</th>
@@ -152,7 +168,7 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
           <tbody className="divide-y divide-gray-50">
             {consultoras.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-10 text-gray-400 text-sm">
+                <td colSpan={7} className="text-center py-10 text-gray-400 text-sm">
                   No hay consultoras registradas.
                 </td>
               </tr>
@@ -171,6 +187,9 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
                         <p className="text-xs text-gray-400">{c.email}</p>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <PlanBadge plan={c.subscription_plan} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     <MembershipBadge days={c.days_remaining} isActive={c.is_active} />
@@ -272,6 +291,37 @@ export default function AdminDashboardPage() {
         <KpiCard label="Total consultoras" value={platform.total_users} icon={<Users size={18} />} />
         <KpiCard label="Activas" value={platform.active} icon={<UserCheck size={18} />} accent />
         <KpiCard label="Inactivas" value={platform.inactive} icon={<UserX size={18} />} />
+      </div>
+
+      {/* ── Bloque 1b: Distribución por plan ── */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold text-gray-500">F</span>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900 leading-none">{platform.plans.free}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Plan Free</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold text-blue-600">B</span>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900 leading-none">{platform.plans.basic}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Plan Basic</p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#FFF0F4] flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold text-[#E75480]">P</span>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-gray-900 leading-none">{platform.plans.pro}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Plan Pro</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Alerta membresías por vencer ── */}

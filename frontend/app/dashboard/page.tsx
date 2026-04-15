@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { getDashboard, updateFollowup, completeFollowup } from "@/lib/api"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { usePlan } from "@/hooks/usePlan"
 import type { DashboardData, DashboardFollowup, ClientItem } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -81,6 +82,7 @@ function ClientSkeleton() {
 
 export default function Dashboard() {
   const router = useRouter()
+  const { can } = usePlan()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -220,14 +222,16 @@ export default function Dashboard() {
               Ingresos
             </span>
           </div>
-          <div className="px-5 py-3 text-center">
-            <span className="text-white text-xl font-bold block">
-              {loading ? "—" : formatCurrency(data?.profit_mes ?? 0)}
-            </span>
-            <span className="text-white/70 text-xs uppercase tracking-wider block mt-0.5">
-              Ganancia
-            </span>
-          </div>
+          {can("basic") && (
+            <div className="px-5 py-3 text-center">
+              <span className="text-white text-xl font-bold block">
+                {loading ? "—" : formatCurrency(data?.profit_mes ?? 0)}
+              </span>
+              <span className="text-white/70 text-xs uppercase tracking-wider block mt-0.5">
+                Ganancia
+              </span>
+            </div>
+          )}
           <div className="px-5 py-3 text-center">
             <span className="text-white text-xl font-bold block">
               {loading ? "—" : `${data?.convPct ?? 0}%`}
@@ -247,8 +251,8 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* ── Sección 2: Meta mensual ── */}
-      {!loading && (data?.monthly_goal ?? 0) > 0 && (
+      {/* ── Sección 2: Meta mensual (Basic+) ── */}
+      {can("basic") && !loading && (data?.monthly_goal ?? 0) > 0 && (
         <div className="bg-white border border-gray-100 rounded-xl px-5 py-3.5">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs font-semibold text-gray-700">Meta mensual</span>
@@ -275,19 +279,31 @@ export default function Dashboard() {
 
       {/* ── Sección 3: Alert strip ── */}
       {!loading && (data?.vencidos ?? 0) > 0 && (
-        <Link href="/followups?tab=seguimientos" className="bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-2.5 flex items-center gap-3 hover:bg-[#FFE8EF] transition">
-          <div className="w-2 h-2 rounded-full bg-[#E75480] animate-pulse flex-shrink-0" />
-          <span className="text-[#C0395E] text-sm font-medium">
-            Tienes {data!.vencidos} clientes para contactar hoy
-          </span>
-          <span className="ml-auto bg-[#E75480] text-white rounded-full text-xs font-semibold px-3 py-0.5">
-            {data!.totalPending} pendientes →
-          </span>
-        </Link>
+        can("basic") ? (
+          <Link href="/followups?tab=seguimientos" className="bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-2.5 flex items-center gap-3 hover:bg-[#FFE8EF] transition">
+            <div className="w-2 h-2 rounded-full bg-[#E75480] animate-pulse flex-shrink-0" />
+            <span className="text-[#C0395E] text-sm font-medium">
+              Tienes {data!.vencidos} clientes para contactar hoy
+            </span>
+            <span className="ml-auto bg-[#E75480] text-white rounded-full text-xs font-semibold px-3 py-0.5">
+              {data!.totalPending} pendientes →
+            </span>
+          </Link>
+        ) : (
+          <div className="bg-[#FFF0F4] border border-[#FADADD] rounded-xl px-4 py-2.5 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-[#E75480] animate-pulse flex-shrink-0" />
+            <span className="text-[#C0395E] text-sm font-medium">
+              Tienes {data!.vencidos} clientes para contactar hoy
+            </span>
+            <span className="ml-auto bg-[#E75480] text-white rounded-full text-xs font-semibold px-3 py-0.5">
+              {data!.totalPending} pendientes
+            </span>
+          </div>
+        )
       )}
 
-      {/* ── Sección 4: Cuentas por cobrar ── */}
-      {!loading && (data?.receivables_count ?? 0) > 0 && (
+      {/* ── Sección 4: Cuentas por cobrar (Basic+) ── */}
+      {can("basic") && !loading && (data?.receivables_count ?? 0) > 0 && (
         <Link href="/followups?tab=cobros" className="bg-white border border-orange-100 rounded-xl px-5 py-3.5 flex items-center justify-between gap-4 hover:bg-orange-50 transition">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0" />
@@ -314,9 +330,11 @@ export default function Dashboard() {
               <span className="text-sm font-semibold text-gray-800">Seguimientos del día</span>
               <p className="text-xs text-gray-400 mt-0.5">Tus contactos más urgentes</p>
             </div>
-            <Link href="/followups?tab=seguimientos" className="text-xs text-[#E75480] font-medium hover:underline">
-              Ver todos →
-            </Link>
+            {can("basic") && (
+              <Link href="/followups?tab=seguimientos" className="text-xs text-[#E75480] font-medium hover:underline">
+                Ver todos →
+              </Link>
+            )}
           </div>
 
           <div className="p-4">

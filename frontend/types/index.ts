@@ -165,6 +165,8 @@ export type MetricsData = {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
+export type SubscriptionPlan = "free" | "basic" | "pro"
+
 export type AdminUser = {
   id: string
   email: string
@@ -176,6 +178,7 @@ export type AdminUser = {
   created_at: string
   last_sign_in_at: string | null
   days_remaining: number | null
+  subscription_plan: SubscriptionPlan
 }
 
 // ── Admin Dashboard ────────────────────────────────────────────────────────────
@@ -185,6 +188,7 @@ export type AdminDashboardConsultora = {
   name: string
   email: string
   is_active: boolean
+  subscription_plan: SubscriptionPlan
   sales_count: number
   revenue: number
   total_customers: number
@@ -198,6 +202,7 @@ export type AdminDashboardData = {
     active: number
     inactive: number
     expiring_soon: { id: string; name: string; days_remaining: number }[]
+    plans: { free: number; basic: number; pro: number }
   }
   this_month: {
     sales_count: number

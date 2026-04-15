@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createSale, getClients, getProducts } from "@/lib/api"
 import { Eye, EyeOff, Search, X } from "lucide-react"
+import { usePlan } from "@/hooks/usePlan"
 import type { Product, SelectedProduct, ClientItem } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -36,6 +37,7 @@ export default function NewSaleContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const clientIdFromURL = searchParams.get("client_id")
+  const { can } = usePlan()
 
   // Products
   const [products, setProducts] = useState<Product[]>([])
@@ -645,7 +647,7 @@ export default function NewSaleContent() {
                 <div className="flex bg-gray-100 rounded-xl p-1 gap-1 mb-2.5">
                   {[
                     { key: "completo", label: "Pago completo" },
-                    { key: "parcial",  label: "Abono parcial" },
+                    ...(can("basic") ? [{ key: "parcial", label: "Abono parcial" }] : []),
                   ].map((m) => (
                     <button
                       key={m.key}
