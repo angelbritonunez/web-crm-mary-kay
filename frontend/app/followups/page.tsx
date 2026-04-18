@@ -2,7 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { Lock } from "lucide-react"
 import { getFollowups, getReceivables, completeFollowup, updateFollowup, addPayment } from "@/lib/api"
+import { usePlan } from "@/hooks/usePlan"
+import UpgradeBanner from "@/components/UpgradeBanner"
 import type { WorkspaceFollowup, Receivable } from "@/types"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -52,7 +55,8 @@ function WAIcon() {
 function FollowupsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const initialTab = searchParams.get("tab") === "cobros" ? "cobros" : "seguimientos"
+  const { can } = usePlan()
+  const initialTab = searchParams.get("tab") === "cobros" && can("basic") ? "cobros" : "seguimientos"
 
   const [tab, setTab]             = useState<"seguimientos" | "cobros">(initialTab)
   const [filter, setFilter]       = useState<"overdue" | "today" | "upcoming" | "all">("all")
@@ -187,35 +191,52 @@ function FollowupsContent() {
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
-        {(["seguimientos", "cobros"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
-              tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t === "seguimientos" ? (
-              <span className="flex items-center gap-2">
-                Seguimientos 2+2+2
-                {followups.length > 0 && (
-                  <span className="bg-[#E75480] text-white text-xs font-semibold rounded-full px-2 py-0.5 leading-none">
-                    {followups.length}
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                Cobros pendientes
-                {receivables.length > 0 && (
-                  <span className="bg-orange-400 text-white text-xs font-semibold rounded-full px-2 py-0.5 leading-none">
-                    {receivables.length}
-                  </span>
-                )}
+        {/* Tab: Seguimientos */}
+        <button
+          onClick={() => setTab("seguimientos")}
+          className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+            tab === "seguimientos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            Seguimientos 2+2+2
+            {followups.length > 0 && (
+              <span className="bg-[#E75480] text-white text-xs font-semibold rounded-full px-2 py-0.5 leading-none">
+                {followups.length}
               </span>
             )}
+          </span>
+        </button>
+
+        {/* Tab: Cobros pendientes */}
+        {can("basic") ? (
+          <button
+            onClick={() => setTab("cobros")}
+            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+              tab === "cobros" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              Cobros pendientes
+              {receivables.length > 0 && (
+                <span className="bg-orange-400 text-white text-xs font-semibold rounded-full px-2 py-0.5 leading-none">
+                  {receivables.length}
+                </span>
+              )}
+            </span>
           </button>
-        ))}
+        ) : (
+          <button
+            disabled
+            className="px-5 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed flex items-center gap-2"
+          >
+            Cobros pendientes
+            <span className="flex items-center gap-0.5 text-[10px] font-semibold bg-gray-200 text-gray-400 rounded-full px-1.5 py-0.5 leading-none">
+              <Lock size={8} strokeWidth={2.5} />
+              Basic
+            </span>
+          </button>
+        )}
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════════ */}
@@ -360,7 +381,8 @@ function FollowupsContent() {
       {/* ══════════════════════════════════════════════════════════════════════ */}
       {/* TAB: COBROS                                                            */}
       {/* ══════════════════════════════════════════════════════════════════════ */}
-      {tab === "cobros" && (
+      {tab === "cobros" && !can("basic") && <UpgradeBanner requiredPlan="basic" />}
+      {tab === "cobros" && can("basic") && (
         <div className="space-y-3">
 
           {/* Summary strip */}
