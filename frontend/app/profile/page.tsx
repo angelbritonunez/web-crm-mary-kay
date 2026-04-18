@@ -71,7 +71,7 @@ function SaveButton({
 // ── Main component ────────────────────────────────────────────────────────────
 
 function ProfileContent() {
-  const router   = useRouter()
+  const router        = useRouter()
   const { plan, can } = usePlan()
 
   const [loading, setLoading] = useState(true)
