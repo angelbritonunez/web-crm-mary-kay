@@ -20,7 +20,7 @@ const getUserId = async () => {
 }
 
 // AUTH
-export const getMe = async (userId: string): Promise<{ role: string; must_change_password: boolean; subscription_plan: string }> => {
+export const getMe = async (userId: string): Promise<{ role: string; subscription_plan: string }> => {
   const res = await fetch(`${API_URL}/auth/me`, {
     headers: { "x-user-id": userId },
   })

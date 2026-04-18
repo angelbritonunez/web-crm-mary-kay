@@ -289,8 +289,6 @@ function CredentialsModal({ email, password, phone, firstName, onClose }: {
     `🔑 Contraseña temporal: ${password}`,
     ``,
     `🔗 Ingresa aquí: ${loginUrl}`,
-    ``,
-    `Recuerda cambiar tu contraseña al ingresar por primera vez.`,
   ].join("\n")
   const waMessageEncoded = encodeURIComponent(waMessage)
 

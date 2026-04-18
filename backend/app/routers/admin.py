@@ -136,7 +136,6 @@ def create_user(body: CreateUserRequest, x_user_id: Optional[str] = Header(None)
         "phone": body.phone or "",
         "role": body.role,
         "is_active": True,
-        "must_change_password": True,
     }).execute()
 
     return {

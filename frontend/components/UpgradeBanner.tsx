@@ -1,7 +1,6 @@
 "use client"
 
-import { Lock } from "lucide-react"
-import { usePlan } from "@/hooks/usePlan"
+import { Lock, Clock } from "lucide-react"
 import type { SubscriptionPlan } from "@/types"
 
 const PLAN_LABELS: Record<SubscriptionPlan, string> = {
@@ -16,17 +15,33 @@ const PLAN_COLORS: Record<SubscriptionPlan, string> = {
   pro:   "bg-[#FFF0F4] text-[#E75480]",
 }
 
-const WA_MESSAGES: Record<SubscriptionPlan, string> = {
-  free:  "",
-  basic: "Hola, me gustaría actualizar mi plan GlowSuite a Basic para acceder a más funciones. ¿Cómo procedo?",
-  pro:   "Hola, me gustaría actualizar mi plan GlowSuite a Pro para acceder a todas las funciones. ¿Cómo procedo?",
-}
-
+const WA_MESSAGE_BASIC = "Hola, me gustaría actualizar mi plan GlowSuite a Basic para acceder a más funciones. ¿Cómo procedo?"
 const ADMIN_PHONE = "18499259226"
 
 export default function UpgradeBanner({ requiredPlan }: { requiredPlan: Exclude<SubscriptionPlan, "free"> }) {
-  const { plan } = usePlan()
-  const waUrl = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(WA_MESSAGES[requiredPlan])}`
+  if (requiredPlan === "pro") {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-[#FFF0F4] flex items-center justify-center mb-5">
+          <Clock size={24} className="text-[#E75480]" />
+        </div>
+
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">
+          Próximamente
+        </h2>
+
+        <p className="text-sm text-gray-400 max-w-sm">
+          Esta función estará disponible en el plan{" "}
+          <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_COLORS.pro}`}>
+            Pro
+          </span>
+          . Estamos trabajando en ello.
+        </p>
+      </div>
+    )
+  }
+
+  const waUrl = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(WA_MESSAGE_BASIC)}`
 
   return (
     <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
@@ -39,11 +54,7 @@ export default function UpgradeBanner({ requiredPlan }: { requiredPlan: Exclude<
       </h2>
 
       <p className="text-sm text-gray-400 mb-1 max-w-sm">
-        Estás en el plan{" "}
-        <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_COLORS[plan]}`}>
-          {PLAN_LABELS[plan]}
-        </span>
-        . Esta función está disponible a partir del plan{" "}
+        Esta función está disponible a partir del plan{" "}
         <span className={`inline-block text-xs font-semibold rounded-full px-2.5 py-0.5 ${PLAN_COLORS[requiredPlan]}`}>
           {PLAN_LABELS[requiredPlan]}
         </span>

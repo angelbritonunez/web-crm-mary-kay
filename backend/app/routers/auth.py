@@ -16,7 +16,7 @@ def get_me(x_user_id: Optional[str] = Header(None)):
         raise HTTPException(status_code=400, detail="Missing x-user-id")
 
     res = supabase.table("profiles") \
-        .select("role, is_active, must_change_password, activated_at, subscription_plan") \
+        .select("role, is_active, activated_at, subscription_plan") \
         .eq("id", x_user_id) \
         .single() \
         .execute()
@@ -56,6 +56,5 @@ def get_me(x_user_id: Optional[str] = Header(None)):
 
     return {
         "role": profile["role"],
-        "must_change_password": profile.get("must_change_password", False),
         "subscription_plan": profile.get("subscription_plan", "free"),
     }

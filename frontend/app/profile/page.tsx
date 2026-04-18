@@ -2,7 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { Lock } from "lucide-react"
 import { usePlan } from "@/hooks/usePlan"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -70,9 +71,7 @@ function SaveButton({
 // ── Main component ────────────────────────────────────────────────────────────
 
 function ProfileContent() {
-  const router       = useRouter()
-  const searchParams = useSearchParams()
-  const mustChange   = searchParams.get("mustChange") === "1"
+  const router        = useRouter()
   const { plan, can } = usePlan()
 
   const [loading, setLoading] = useState(true)
@@ -275,15 +274,7 @@ function ProfileContent() {
       setNewPassword("")
       setConfirmPassword("")
       setPasswordStatus({ type: "success", msg: "Contraseña actualizada correctamente." })
-      // Clear must_change_password flag if this was a forced change
-      if (mustChange) {
-        const supabase2 = createClient()
-        await supabase2.from("profiles").update({ must_change_password: false }).eq("id", userId)
-        const dest = role === "admin" ? "/admin/dashboard" : role === "operador" ? "/operador/users" : "/dashboard"
-        setTimeout(() => router.push(dest), 1500)
-      } else {
-        setTimeout(() => setPasswordStatus(null), 3000)
-      }
+      setTimeout(() => setPasswordStatus(null), 3000)
     }
     setSavingPassword(false)
   }
@@ -322,19 +313,6 @@ function ProfileContent() {
   return (
     <div className="space-y-4">
 
-      {/* ── Banner cambio de contraseña obligatorio ── */}
-      {mustChange && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex items-start gap-3">
-          <span className="text-amber-500 text-lg leading-none mt-0.5">⚠️</span>
-          <div>
-            <p className="text-sm font-semibold text-amber-800">Debes cambiar tu contraseña</p>
-            <p className="text-xs text-amber-600 mt-0.5">
-              Por seguridad, cambia la contraseña temporal antes de continuar. Ve a la sección <strong>Seguridad</strong> más abajo.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Profile header ── */}
       <div className="bg-white rounded-2xl border border-gray-100 px-6 py-5">
         <div className="flex items-center gap-4">
@@ -352,13 +330,13 @@ function ProfileContent() {
               <span className="rounded-full text-xs font-medium px-2.5 py-0.5 bg-[#FFF0F4] text-[#C0395E] capitalize">
                 {role}
               </span>
-              {role === "consultora" && (
-                <span className={`rounded-full text-xs font-semibold px-2.5 py-0.5 ${
+              {role !== "admin" && role !== "operador" && (
+                <span className={`rounded-full text-xs font-medium px-2.5 py-0.5 ${
                   plan === "pro"   ? "bg-[#FFF0F4] text-[#E75480]" :
                   plan === "basic" ? "bg-blue-50 text-blue-600" :
                                      "bg-gray-100 text-gray-500"
                 }`}>
-                  {plan === "pro" ? "Pro" : plan === "basic" ? "Basic" : "Free"}
+                  {plan === "pro" ? "Pro (próximamente)" : plan === "basic" ? "Basic" : "Free"}
                 </span>
               )}
             </div>
@@ -443,44 +421,61 @@ function ProfileContent() {
         </div>
 
         {/* ── Metas de negocio (consultoras Basic+) ── */}
-        {role !== "admin" && role !== "operador" && can("basic") && <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div className="border-b border-gray-50 px-5 py-4">
-            <span className="text-sm font-semibold text-gray-800">Metas de negocio</span>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Define tu objetivo mensual de ingresos
-            </p>
-          </div>
-          <div className="px-5 py-5 space-y-4">
-            <div>
-              <label className={labelClass}>Meta mensual (DOP)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">
-                  RD$
+        {role !== "admin" && role !== "operador" && (
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="border-b border-gray-50 px-5 py-4 flex items-center justify-between">
+              <div>
+                <span className="text-sm font-semibold text-gray-800">Metas de negocio</span>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Define tu objetivo mensual de ingresos
+                </p>
+              </div>
+              {!can("basic") && (
+                <span className="flex items-center gap-0.5 text-[10px] font-semibold bg-gray-100 text-gray-400 rounded-full px-1.5 py-0.5 leading-none">
+                  <Lock size={8} strokeWidth={2.5} />
+                  Basic
                 </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={500}
-                  value={monthlyGoal}
-                  onChange={(e) => setMonthlyGoal(e.target.value)}
-                  placeholder="Ej. 25000"
-                  className="w-full border border-gray-200 rounded-lg bg-gray-50 pl-10 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+              )}
+            </div>
+            {can("basic") ? (
+              <div className="px-5 py-5 space-y-4">
+                <div>
+                  <label className={labelClass}>Meta mensual (DOP)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">
+                      RD$
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      step={500}
+                      value={monthlyGoal}
+                      onChange={(e) => setMonthlyGoal(e.target.value)}
+                      placeholder="Ej. 25000"
+                      className="w-full border border-gray-200 rounded-lg bg-gray-50 pl-10 pr-3 py-2.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-300 mt-1.5">
+                    Visible en tu dashboard y página de métricas como progreso mensual.
+                  </p>
+                </div>
+                <SaveButton
+                  onClick={handleSaveGoal}
+                  saving={savingGoal}
+                  disabled={monthlyGoal === originalGoal}
+                  label="Guardar meta"
+                  savingLabel="Guardando..."
+                  status={goalStatus}
                 />
               </div>
-              <p className="text-[11px] text-gray-300 mt-1.5">
-                Visible en tu dashboard y página de métricas como progreso mensual.
-              </p>
-            </div>
-            <SaveButton
-              onClick={handleSaveGoal}
-              saving={savingGoal}
-              disabled={monthlyGoal === originalGoal}
-              label="Guardar meta"
-              savingLabel="Guardando..."
-              status={goalStatus}
-            />
+            ) : (
+              <div className="px-5 py-5 flex items-center gap-3 text-sm text-gray-400">
+                <Lock size={14} className="text-gray-300 flex-shrink-0" />
+                Disponible a partir del plan Basic. Contacta a tu administrador para actualizar.
+              </div>
+            )}
           </div>
-        </div>}
+        )}
 
         {/* ── Seguridad ── */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

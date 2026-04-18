@@ -12,7 +12,8 @@ const consultorItems = [
   { label: "Dashboard",    href: "/dashboard",  minPlan: "free"  },
   { label: "Clientes",     href: "/clients",    minPlan: "free"  },
   { label: "Ventas",       href: "/sales",      minPlan: "free"  },
-  { label: "Seguimientos", href: "/followups",  minPlan: "basic" },
+  { label: "Seguimientos", href: "/followups",  minPlan: "free"  },
+  { label: "Agenda",       href: "/agenda",     minPlan: "pro"   },
   { label: "Métricas",     href: "/metrics",    minPlan: "pro"   },
 ] as const
 

@@ -28,7 +28,7 @@ export function useAuth() {
 
       setUser(session.user)
 
-      let profile: { role: string; must_change_password: boolean }
+      let profile: { role: string; subscription_plan: string }
       try {
         profile = await getMe(session.user.id)
       } catch (e: any) {
@@ -43,9 +43,7 @@ export function useAuth() {
       const resolvedRole = (profile.role as Role) || "consultora"
       setRole(resolvedRole)
 
-      if (profile.must_change_password) {
-        router.push("/profile?mustChange=1")
-      } else if (!isAllowed(resolvedRole, pathnameRef.current)) {
+      if (!isAllowed(resolvedRole, pathnameRef.current)) {
         router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
       }
     }
