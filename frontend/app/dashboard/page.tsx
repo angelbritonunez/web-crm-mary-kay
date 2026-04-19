@@ -197,8 +197,8 @@ export default function Dashboard() {
         </div>
 
         {/* Center: stats */}
-        <div className="relative z-10 bg-white/15 rounded-2xl flex divide-x divide-white/20">
-          <div className="px-5 py-3 text-center">
+        <div className="relative z-10 bg-white/15 rounded-2xl flex flex-wrap md:flex-nowrap md:divide-x md:divide-white/20">
+          <div className="px-3 py-2 md:px-5 md:py-3 text-center">
             <span className="text-white text-xl font-bold block">
               {loading ? "—" : (data?.vencidos ?? 0)}
             </span>
@@ -206,7 +206,7 @@ export default function Dashboard() {
               Msgs hoy
             </span>
           </div>
-          <div className="px-5 py-3 text-center">
+          <div className="px-3 py-2 md:px-5 md:py-3 text-center">
             <span className="text-white text-xl font-bold block">
               {loading ? "—" : (data?.ventas_mes ?? 0)}
             </span>
@@ -214,7 +214,7 @@ export default function Dashboard() {
               Ventas
             </span>
           </div>
-          <div className="px-5 py-3 text-center">
+          <div className="px-3 py-2 md:px-5 md:py-3 text-center">
             <span className="text-white text-xl font-bold block">
               {loading ? "—" : formatCurrency(data?.revenue_mes ?? 0)}
             </span>
@@ -223,7 +223,7 @@ export default function Dashboard() {
             </span>
           </div>
           {can("basic") && (
-            <div className="px-5 py-3 text-center">
+            <div className="px-3 py-2 md:px-5 md:py-3 text-center">
               <span className="text-white text-xl font-bold block">
                 {loading ? "—" : formatCurrency(data?.profit_mes ?? 0)}
               </span>
@@ -232,7 +232,7 @@ export default function Dashboard() {
               </span>
             </div>
           )}
-          <div className="px-5 py-3 text-center">
+          <div className="px-3 py-2 md:px-5 md:py-3 text-center">
             <span className="text-white text-xl font-bold block">
               {loading ? "—" : `${data?.convPct ?? 0}%`}
             </span>
@@ -321,7 +321,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Sección 5: Grid principal ── */}
-      <div className="grid grid-cols-[1fr_340px] gap-5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
 
         {/* Columna izquierda — Seguimientos del día (preview) */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">

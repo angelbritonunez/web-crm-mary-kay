@@ -474,7 +474,7 @@ function FollowupsContent() {
                     {isAbono && (
                       <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 mb-3 space-y-2">
                         <p className="text-xs font-medium text-gray-600">Registrar abono</p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <div className="relative flex-1">
                             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">RD$</span>
                             <input

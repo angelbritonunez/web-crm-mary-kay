@@ -345,7 +345,7 @@ function ProfileContent() {
       </div>
 
       {/* ── Sections ── */}
-      <div className="space-y-4 max-h-[calc(100vh-14rem)] overflow-y-auto pb-2">
+      <div className="space-y-4 overflow-y-auto pb-2 md:max-h-[calc(100vh-14rem)]">
 
         {/* ── Información personal ── */}
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
