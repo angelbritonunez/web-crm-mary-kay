@@ -480,7 +480,7 @@ export default function OperadorUsersPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => <div key={i} className="bg-white rounded-xl border border-gray-100 px-5 py-4 animate-pulse h-20" />)}
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-6 animate-pulse h-64" />
@@ -534,7 +534,7 @@ export default function OperadorUsersPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por nombre..."
-              className="w-52 border border-gray-200 rounded-lg bg-gray-50 pl-8 pr-3 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
+              className="w-full sm:w-52 border border-gray-200 rounded-lg bg-gray-50 pl-8 pr-3 py-1.5 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#E75480] focus:border-transparent transition"
             />
             <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-300" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -596,11 +596,11 @@ export default function OperadorUsersPage() {
                 <th className="text-left px-5 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Usuario</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Rol</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Plan</th>
-                <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Último acceso</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Desde</th>
+                <th className="hidden sm:table-cell text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
+                <th className="hidden lg:table-cell text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Último acceso</th>
+                <th className="hidden lg:table-cell text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Desde</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Estado</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Notas</th>
+                <th className="hidden xl:table-cell text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Notas</th>
                 <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
@@ -654,12 +654,12 @@ export default function OperadorUsersPage() {
                       )}
                     </td>
                     {/* Membresía */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="hidden sm:table-cell px-4 py-3 text-center">
                       <MembershipBadge days={u.days_remaining} isActive={u.is_active} />
                     </td>
                     {/* Fechas */}
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDateTime(u.last_sign_in_at)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(u.created_at)}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDateTime(u.last_sign_in_at)}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{formatDate(u.created_at)}</td>
                     {/* Toggle activo — no se puede desactivar al propio admin */}
                     <td className="px-4 py-3 text-center">
                       <button
@@ -674,7 +674,7 @@ export default function OperadorUsersPage() {
                       </button>
                     </td>
                     {/* Notas */}
-                    <td className="px-4 py-3 max-w-[160px]">
+                    <td className="hidden xl:table-cell px-4 py-3 max-w-[160px]">
                       {editingNotes?.id === u.id ? (
                         <input
                           autoFocus

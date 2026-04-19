@@ -245,7 +245,7 @@ export default function NewSaleContent() {
 
       {/* ── Two-column form ── */}
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-[1fr_300px] gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
 
           {/* ── Left: form sections ── */}
           <div className="space-y-4">
