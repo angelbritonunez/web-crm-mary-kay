@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 48" fill="none" width="210" height="48">
+  <!-- Icon -->
+  <rect width="48" height="48" rx="13" fill="#E75480"/>
+  <path d="M24 9.5 L26.2 19.8 L36 22 L26.2 24.2 L24 33.5 L21.8 24.2 L12 22 L21.8 19.8 Z" fill="white"/>
+  <circle cx="33.5" cy="13.5" r="2.4" fill="white" opacity="0.65"/>
+  <circle cx="13.5" cy="34" r="1.8" fill="white" opacity="0.4"/>
+  <!-- Wordmark: tspan keeps Glow+Suite adjacent, no overlap -->
+  <text x="62" y="33" font-family="'DM Sans', system-ui, sans-serif" font-size="26" font-weight="700" letter-spacing="-0.5">
+    <tspan fill="#E75480">Glow</tspan><tspan fill="#1A1A2E">Suite</tspan>
+  </text>
+</svg>

@@ -51,7 +51,7 @@ export default function LandingPage() {
       {/* NAV */}
       <nav>
         <div className="nav-logo">
-          Glow<span>Suite</span>
+          <img src="/logo.svg" alt="GlowSuite" height="36" />
         </div>
         <div className="nav-links">
           <a href="#problema">El problema</a>
@@ -466,7 +466,7 @@ export default function LandingPage() {
       {/* FOOTER */}
       <footer>
         <div className="footer-logo">
-          Glow<span>Suite</span>
+          <img src="/logo.svg" alt="GlowSuite" height="28" />
         </div>
         <div className="footer-copy">© 2026 GlowSuite · Hecho con ♥ para consultoras de RD</div>
       </footer>
