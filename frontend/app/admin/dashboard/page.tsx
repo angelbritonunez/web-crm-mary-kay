@@ -250,7 +250,7 @@ export default function AdminDashboardPage() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-white rounded-xl border border-gray-100 px-5 py-4 animate-pulse h-20" />
           ))}
@@ -294,7 +294,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* ── Bloque 1b: Distribución por plan ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 px-5 py-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-bold text-gray-500">F</span>
