@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 const PORTAL_URL = "https://glowsuite-crm.vercel.app/login"
+const REGISTER_URL = "https://glowsuite-crm.vercel.app/register"
 
 export default function LandingPage() {
   useEffect(() => {
@@ -396,7 +397,7 @@ export default function LandingPage() {
                 <div className="precio-feature precio-feature-disabled">Sin métricas</div>
                 <div className="precio-feature precio-feature-disabled">Sin cuentas x cobrar</div>
               </div>
-              <a href={PORTAL_URL} className="btn-precio btn-precio-outline">
+              <a href={REGISTER_URL} className="btn-precio btn-precio-outline">
                 Empezar gratis
               </a>
             </div>
@@ -440,7 +441,7 @@ export default function LandingPage() {
                   Próximamente
                 </div>
               </div>
-              <a href={PORTAL_URL} className="btn-precio btn-precio-outline">
+              <a href={REGISTER_URL} className="btn-precio btn-precio-outline">
                 Elegir Pro
               </a>
             </div>
