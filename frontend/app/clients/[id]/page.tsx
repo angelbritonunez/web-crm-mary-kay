@@ -436,7 +436,7 @@ export default function ClientProfilePage() {
         </div>
 
         {/* Scrollable tab content */}
-        <div className="max-h-[calc(100vh-18rem)] overflow-y-auto">
+        <div className="overflow-y-auto md:max-h-[calc(100vh-18rem)]">
 
           {/* ── Tab: Información ── */}
           {activeTab === "info" && (
@@ -643,7 +643,7 @@ export default function ClientProfilePage() {
                           />
 
                           {/* Date */}
-                          <span className="text-xs text-gray-400 w-24 flex-shrink-0">
+                          <span className="hidden sm:inline text-xs text-gray-400 w-24 flex-shrink-0">
                             {formatDate(sale.sale_date ?? sale.created_at)}
                           </span>
 
@@ -664,7 +664,7 @@ export default function ClientProfilePage() {
                             ) : (
                               <span className="rounded-full text-xs font-medium px-2 py-0.5 bg-yellow-50 text-yellow-700">Pendiente</span>
                             )}
-                            <span className="text-sm font-semibold text-gray-800 w-20 text-right">
+                            <span className="text-sm font-semibold text-gray-800 w-16 sm:w-20 text-right">
                               {formatCurrency(total)}
                             </span>
                           </div>

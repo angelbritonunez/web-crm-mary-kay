@@ -105,7 +105,7 @@ export default function NewClientPage() {
         <form onSubmit={handleSubmit}>
 
           {/* Scrollable body */}
-          <div className="px-6 py-5 space-y-5 max-h-[calc(100vh-16rem)] overflow-y-auto">
+          <div className="px-6 py-5 space-y-5 overflow-y-auto md:max-h-[calc(100vh-16rem)]">
 
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg px-4 py-3">
