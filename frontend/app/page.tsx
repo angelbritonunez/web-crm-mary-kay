@@ -343,20 +343,21 @@ export default function LandingPage() {
           </p>
           <div className="equipo-grid">
             {[
-              { initials: "AB", name: "Angel Brito", role: "CEO & Fundador" },
-              {
-                initials: "LR",
-                name: "Luisa Ramírez",
-                role: "Co-fundadora & Embajadora Comercial",
-              },
-              { initials: "EC", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
+              { photo: "/screenshots/angel-brito.jpg", name: "Angel Brito", role: "CEO & Fundador" },
+              { photo: "/screenshots/luisa-ramirez.jpg", name: "Luisa Ramírez", role: "Co-fundadora & Embajadora Comercial" },
+              { photo: "/screenshots/esmeiry-carmona.PNG", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
             ].map((member) => (
               <div
                 className="feature-card fade-up"
                 key={member.name}
                 style={{ textAlign: "center", padding: "32px 24px" }}
               >
-                <div className="equipo-avatar">{member.initials}</div>
+                <img
+                  src={member.photo}
+                  alt={member.name}
+                  className="equipo-avatar"
+                  style={{ objectFit: "cover" }}
+                />
                 <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>
                   {member.name}
                 </div>
