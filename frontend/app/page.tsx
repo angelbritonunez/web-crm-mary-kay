@@ -75,7 +75,7 @@ export default function LandingPage() {
               <em>en un solo lugar.</em>
             </h1>
             <p className="hero-sub">
-              GlowSuite elimina el caos de manejar tu consultora desde el teléfono. Seguimientos,
+              GlowSuite elimina el caos de manejar tu consultora desde mil maneras distintas. Seguimientos,
               cobros y clientas — todo en un solo lugar, sin complicaciones.
             </p>
             <div className="hero-actions">
@@ -156,7 +156,7 @@ export default function LandingPage() {
                 <div>
                   <h4>Olvidas a quién dar seguimiento</h4>
                   <p>
-                    Tienes intención de llamar, pero el día pasa y la clienta potencial también. El
+                    Tienes intención de escribirle, pero el día pasa y la clienta potencial también. El
                     olvido te cuesta ventas todos los días.
                   </p>
                 </div>
@@ -179,7 +179,7 @@ export default function LandingPage() {
                 "El sistema te dice exactamente a quién contactar hoy",
                 "Cobros pendientes visibles de un vistazo, con mensaje ya listo",
                 "Si sabes usar WhatsApp, sabes usar GlowSuite",
-                "Diseñado para el celular, desde el primer día",
+                "Accede desde cualquier dispositivo, sin instalar nada",
               ].map((text) => (
                 <div className="after-item" key={text}>
                   <div className="after-check">
@@ -224,7 +224,7 @@ export default function LandingPage() {
               </div>
               <h3>Sistema 2+2+2 de seguimientos</h3>
               <p>
-                Nunca más olvides a quién llamar. El sistema te recuerda automáticamente a los 2
+                Nunca más olvides a quién contactar. El sistema te recuerda automáticamente a los 2
                 días, 2 semanas y 2 meses después de cada venta.
               </p>
             </div>
@@ -257,14 +257,14 @@ export default function LandingPage() {
             <div className="feature-card fade-up fade-up-delay-1">
               <div className="feature-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="5" y="2" width="14" height="20" rx="2" />
-                  <path d="M12 18h.01" />
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <path d="M8 21h8M12 17v4" />
                 </svg>
               </div>
-              <h3>100% desde tu celular</h3>
+              <h3>Todo desde un solo lugar</h3>
               <p>
-                Hecha para moverse contigo. Sin instalar nada, sin computadora, sin configuraciones
-                complicadas. Abre y empieza.
+                Una plataforma web que funciona desde cualquier dispositivo. Sin instalar nada, sin
+                configuraciones complicadas. Abre el navegador y empieza.
               </p>
             </div>
             <div className="feature-card fade-up fade-up-delay-2">
@@ -317,7 +317,7 @@ export default function LandingPage() {
               <div className="step-num">3</div>
               <h3>El sistema trabaja por ti</h3>
               <p>
-                Cada día, GlowSuite te dice a quién llamar, qué cobrar y cómo va tu negocio. Tú
+                Cada día, GlowSuite te dice a quién escribirle, qué cobrar y cómo va tu negocio. Tú
                 solo das el siguiente paso.
               </p>
             </div>
@@ -343,12 +343,12 @@ export default function LandingPage() {
           <div className="equipo-grid">
             {[
               { initials: "AB", name: "Angel Brito", role: "CEO & Fundador" },
-              { initials: "EC", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
               {
                 initials: "LR",
                 name: "Luisa Ramírez",
                 role: "Co-fundadora & Embajadora Comercial",
               },
+              { initials: "EC", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
             ].map((member) => (
               <div
                 className="feature-card fade-up"
