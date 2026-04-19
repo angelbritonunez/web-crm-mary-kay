@@ -13,6 +13,9 @@ const dmSans = DM_Sans({
 export const metadata = {
   title: "GlowSuite — El CRM para consultoras de belleza",
   description: "CRM para consultoras de belleza independientes",
+  icons: {
+    icon: "/favicon.svg",
+  },
 }
 
 export default function RootLayout({ children }: any) {

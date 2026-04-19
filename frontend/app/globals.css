@@ -42,6 +42,7 @@ html { scroll-behavior: smooth; }
   font-size: 1.4rem; font-weight: 700; color: var(--text);
   letter-spacing: -0.02em;
   text-decoration: none;
+  display: flex; align-items: center; gap: 10px;
 }
 .landing-page .nav-logo span { color: var(--pink); }
 .landing-page .nav-links { display: flex; gap: 32px; }
@@ -408,7 +409,7 @@ html { scroll-behavior: smooth; }
   border-top: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
-.landing-page .footer-logo { font-size: 1.1rem; font-weight: 700; }
+.landing-page .footer-logo { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .landing-page .footer-logo span { color: var(--pink); }
 .landing-page .footer-copy { font-size: 0.82rem; color: var(--text-muted); }
 
