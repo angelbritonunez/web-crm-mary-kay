@@ -322,6 +322,7 @@ html { scroll-behavior: smooth; }
   background: white;
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
+  display: flex; flex-direction: column;
 }
 .landing-page .precio-card:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
 .landing-page .precio-card.featured {
@@ -356,7 +357,7 @@ html { scroll-behavior: smooth; }
   height: 1px; background: var(--border); margin: 24px 0;
 }
 .landing-page .precio-card.featured .precio-divider { background: rgba(255,255,255,0.2); }
-.landing-page .precio-features { display: flex; flex-direction: column; gap: 10px; }
+.landing-page .precio-features { display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .landing-page .precio-feature {
   font-size: 0.88rem; display: flex; align-items: center; gap: 10px;
 }

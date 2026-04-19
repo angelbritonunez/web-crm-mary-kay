@@ -2,7 +2,8 @@
 
 import { useEffect } from "react"
 
-const PORTAL_URL = "https://glowsuite-crm.vercel.app/login"
+const PORTAL_URL = "/login"
+const REGISTER_URL = "/register"
 
 export default function LandingPage() {
   useEffect(() => {
@@ -342,20 +343,21 @@ export default function LandingPage() {
           </p>
           <div className="equipo-grid">
             {[
-              { initials: "AB", name: "Angel Brito", role: "CEO & Fundador" },
-              {
-                initials: "LR",
-                name: "Luisa Ramírez",
-                role: "Co-fundadora & Embajadora Comercial",
-              },
-              { initials: "EC", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
+              { photo: "/screenshots/angel-brito.jpg", name: "Angel Brito", role: "CEO & Fundador" },
+              { photo: "/screenshots/luisa-ramirez.jpg", name: "Luisa Ramírez", role: "Co-fundadora & Embajadora Comercial" },
+              { photo: "/screenshots/esmeiry-carmona.PNG", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
             ].map((member) => (
               <div
                 className="feature-card fade-up"
                 key={member.name}
                 style={{ textAlign: "center", padding: "32px 24px" }}
               >
-                <div className="equipo-avatar">{member.initials}</div>
+                <img
+                  src={member.photo}
+                  alt={member.name}
+                  className="equipo-avatar"
+                  style={{ objectFit: "cover" }}
+                />
                 <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: 4 }}>
                   {member.name}
                 </div>
@@ -396,7 +398,7 @@ export default function LandingPage() {
                 <div className="precio-feature precio-feature-disabled">Sin métricas</div>
                 <div className="precio-feature precio-feature-disabled">Sin cuentas x cobrar</div>
               </div>
-              <a href={PORTAL_URL} className="btn-precio btn-precio-outline">
+              <a href={REGISTER_URL} className="btn-precio btn-precio-outline">
                 Empezar gratis
               </a>
             </div>
@@ -418,9 +420,9 @@ export default function LandingPage() {
                 <div className="precio-feature">Reporte de ganancias</div>
                 <div className="precio-feature precio-feature-disabled">Sin métricas avanzadas</div>
               </div>
-              <a href={PORTAL_URL} className="btn-precio btn-precio-white">
-                Entrar a GlowSuite
-              </a>
+              <span className="btn-precio btn-precio-white" style={{ opacity: 0.45, cursor: "not-allowed", pointerEvents: "none" }}>
+                Disponible próximamente
+              </span>
             </div>
             {/* Pro */}
             <div className="precio-card fade-up fade-up-delay-2">
@@ -440,9 +442,9 @@ export default function LandingPage() {
                   Próximamente
                 </div>
               </div>
-              <a href={PORTAL_URL} className="btn-precio btn-precio-outline">
-                Elegir Pro
-              </a>
+              <span className="btn-precio btn-precio-outline" style={{ opacity: 0.45, cursor: "not-allowed", pointerEvents: "none" }}>
+                Disponible próximamente
+              </span>
             </div>
           </div>
         </div>

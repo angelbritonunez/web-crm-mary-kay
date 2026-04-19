@@ -117,7 +117,6 @@ function LoginForm() {
           ¿Olvidaste tu contraseña?
         </p>
 
-        {/* Registro deshabilitado — el admin crea las cuentas desde /admin/users
         <p className="text-sm text-gray-500 text-center">
           ¿No tienes cuenta?{" "}
           <span
@@ -127,10 +126,6 @@ function LoginForm() {
           >
             Crear cuenta →
           </span>
-        </p>
-        */}
-        <p className="text-sm text-gray-400 text-center">
-          ¿No tienes cuenta? Contacta a tu administrador.
         </p>
       </div>
     </AuthCard>
