@@ -7,7 +7,13 @@ from app.routers import clients, products, sales, followups, metrics, dashboard,
 
 app = FastAPI()
 
-allowed_origins = ["*"] if ALLOWED_ORIGIN == "*" else [ALLOWED_ORIGIN]
+if ALLOWED_ORIGIN == "*":
+    allowed_origins = ["*"]
+else:
+    base = ALLOWED_ORIGIN.rstrip("/")
+    www = base.replace("://", "://www.") if "://www." not in base else base
+    nowww = base.replace("://www.", "://") if "://www." in base else base
+    allowed_origins = list({base, www, nowww})
 
 app.add_middleware(
     CORSMiddleware,
