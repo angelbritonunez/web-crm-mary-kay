@@ -82,12 +82,27 @@ Three tiers: `free` | `basic` | `pro`. Stored in `profiles.subscription_plan`.
 - **Feature matrix:** Free = clientes/ventas/seguimientos básicos; Basic adds crédito, ganancias, workspace; Pro adds métricas avanzadas, WhatsApp, link registro, agenda.
 - **Assignment:** manual por operador/admin desde `/operador/users` — sin pasarela de pago por ahora.
 
+### Auth Flow
+
+- **Login:** `app/login/page.tsx` — incluye flujo inline de recuperación de contraseña
+- **Recuperación de contraseña:** llama `supabase.auth.resetPasswordForEmail()` con `redirectTo: https://glowsuitecrm.com/auth/update-password`
+- **Nueva contraseña:** `app/auth/update-password/page.tsx` — Supabase crea sesión automáticamente desde el token del email; la ruta está en `PUBLIC_ROUTES` para evitar redirect al dashboard
+- **Confirmación de cuenta:** `app/auth/confirmed/page.tsx` — hace `signOut()` para evitar auto-login
+- **Rutas públicas:** definidas en `lib/auth-config.ts` → `PUBLIC_ROUTES`. Cualquier ruta auth nueva debe agregarse ahí o `useAuth` redirige al dashboard
+
 ### Styling Conventions
 
 - Tailwind CSS 4 with a custom pink theme (`#E75480`)
 - Inline Tailwind classes (no CSS modules)
 - Mobile-first with `md:` / `lg:` breakpoints
 - Icons via `lucide-react`
+
+## Dominio y Email
+
+- **Dominio:** `glowsuitecrm.com` — comprado en Namecheap, apunta a Vercel (frontend)
+- **SMTP transaccional:** Resend — `noreply@glowsuitecrm.com`, configurado en Supabase PROD (Settings → Auth → SMTP). Host: `smtp.resend.com:465`, user: `resend`, password: API key de Resend
+- **Templates de email:** personalizados en Supabase PROD → Authentication → Email Templates (HTML en español con branding GlowSuite)
+- **Email de contacto:** pendiente — reenvío desde `hola@glowsuitecrm.com` a Gmail (Namecheap Email Forwarding, aún no configurado)
 
 ## Environments
 
