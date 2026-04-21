@@ -48,7 +48,7 @@ def followup_metrics(request: Request):
 def get_metrics(request: Request, period: str = "month"):
     """
     Business metrics for the selected period. Accepted values: week, month, last_month, year.
-    Each period is compared against its equivalent prior period for growth indicators.
+    Revenue is based on payment_date (cash collected). Profit and sales_count use sale_date.
     """
     try:
         user_id = require_user_id(request.headers.get("x-user-id"))
@@ -83,24 +83,48 @@ def get_metrics(request: Request, period: str = "month"):
         prev_start_iso = prev_range_start.isoformat()
         prev_end_iso = prev_range_end.isoformat()
 
-        all_sales_res = supabase.table("sales") \
-            .select("id, total, profit, payment_type, created_at, sale_date") \
-            .eq("user_id", user_id) \
-            .execute()
-
-        def effective_date(s: dict) -> str:
-            """sale_date (manual entry) takes precedence over created_at."""
-            return s.get("sale_date") or s.get("created_at", "")[:10]
-
         start_date = range_start.date().isoformat()
         end_date = range_end.date().isoformat()
         prev_start_date = prev_range_start.date().isoformat()
         prev_end_date = prev_range_end.date().isoformat()
 
-        all_sales = all_sales_res.data or []
-        sales_res_data = [s for s in all_sales if start_date <= effective_date(s) <= end_date]
-        prev_sales_res_data = [s for s in all_sales if prev_start_date <= effective_date(s) <= prev_end_date]
+        # ── Sales (for sales_count, profit, top products — by sale_date) ──────
+        all_sales_res = supabase.table("sales") \
+            .select("id, total, profit, payment_type, sale_date") \
+            .eq("user_id", user_id) \
+            .execute()
 
+        all_sales = all_sales_res.data or []
+        sales_in_period = [
+            s for s in all_sales
+            if start_date <= (s.get("sale_date") or "")[:10] <= end_date
+        ]
+        prev_sales_in_period = [
+            s for s in all_sales
+            if prev_start_date <= (s.get("sale_date") or "")[:10] <= prev_end_date
+        ]
+
+        # ── Payments (for revenue — by payment_date) ──────────────────────────
+        sale_ids = [s["id"] for s in all_sales]
+        if sale_ids:
+            all_payments_res = supabase.table("payments") \
+                .select("id, amount, payment_date, payment_type, sale_id") \
+                .in_("sale_id", sale_ids) \
+                .execute()
+            all_payments = all_payments_res.data or []
+        else:
+            all_payments = []
+
+        payments_in_period = [
+            p for p in all_payments
+            if start_date <= (p.get("payment_date") or "")[:10] <= end_date
+        ]
+        prev_payments_in_period = [
+            p for p in all_payments
+            if prev_start_date <= (p.get("payment_date") or "")[:10] <= prev_end_date
+        ]
+
+        # ── Profile, clients, followups ───────────────────────────────────────
         profile_res = supabase.table("profiles") \
             .select("monthly_goal") \
             .eq("id", user_id) \
@@ -137,17 +161,20 @@ def get_metrics(request: Request, period: str = "month"):
             .not_.is_("source_followup_id", None) \
             .execute()
 
-        sales = sales_res_data
-        prev_sales = prev_sales_res_data
+        # ── Aggregations ──────────────────────────────────────────────────────
         all_clients = clients_res.data or []
         monthly_goal = (profile_res.data or {}).get("monthly_goal")
 
-        revenue = sum(float(s.get("total") or 0) for s in sales)
-        revenue_prev = sum(float(s.get("total") or 0) for s in prev_sales)
-        profit_total = sum(float(s.get("profit") or 0) for s in sales)
-        profit_prev = sum(float(s.get("profit") or 0) for s in prev_sales)
-        sales_count = len(sales)
-        sales_count_prev = len(prev_sales)
+        # Revenue = cash collected (payments) by payment_date
+        revenue = sum(float(p.get("amount") or 0) for p in payments_in_period)
+        revenue_prev = sum(float(p.get("amount") or 0) for p in prev_payments_in_period)
+
+        # Profit = from sales by sale_date (unchanged)
+        profit_total = sum(float(s.get("profit") or 0) for s in sales_in_period)
+        profit_prev = sum(float(s.get("profit") or 0) for s in prev_sales_in_period)
+
+        sales_count = len(sales_in_period)
+        sales_count_prev = len(prev_sales_in_period)
 
         customers_n = len([c for c in all_clients if c["status"] == "customer"])
         prospects_n = len([c for c in all_clients if c["status"] == "prospect"])
@@ -155,15 +182,14 @@ def get_metrics(request: Request, period: str = "month"):
         total_clients = len(all_clients)
         conv_rate = round((customers_n / total_clients * 100) if total_clients > 0 else 0, 1)
 
-        # Revenue chart: monthly buckets for year view, daily buckets for all others.
-        # sale_date (manual entry) takes precedence over created_at (system timestamp).
+        # ── Revenue chart (by payment_date) ───────────────────────────────────
         chart_points = []
         if period == "year":
             monthly: dict = defaultdict(float)
-            for s in sales:
-                date_key = (s.get("sale_date") or s.get("created_at") or "")[:7]
+            for p in payments_in_period:
+                date_key = (p.get("payment_date") or "")[:7]
                 if date_key:
-                    monthly[date_key] += float(s.get("total") or 0)
+                    monthly[date_key] += float(p.get("amount") or 0)
             cur = range_start.date().replace(day=1)
             end_d = range_end.date().replace(day=1)
             while cur <= end_d:
@@ -175,10 +201,10 @@ def get_metrics(request: Request, period: str = "month"):
                     cur = cur.replace(month=cur.month + 1)
         else:
             daily: dict = defaultdict(float)
-            for s in sales:
-                date_key = (s.get("sale_date") or s.get("created_at") or "")[:10]
+            for p in payments_in_period:
+                date_key = (p.get("payment_date") or "")[:10]
                 if date_key:
-                    daily[date_key] += float(s.get("total") or 0)
+                    daily[date_key] += float(p.get("amount") or 0)
             cur = range_start.date()
             end_d = range_end.date()
             while cur <= end_d:
@@ -186,23 +212,24 @@ def get_metrics(request: Request, period: str = "month"):
                 chart_points.append({"date": d, "revenue": round(daily.get(d, 0.0), 2)})
                 cur += timedelta(days=1)
 
+        # ── By payment type (from payments table) ─────────────────────────────
         payment_map: dict = defaultdict(lambda: {"total": 0.0, "count": 0})
-        for s in sales:
-            pt = s.get("payment_type") or "otro"
-            payment_map[pt]["total"] += float(s.get("total") or 0)
+        for p in payments_in_period:
+            pt = p.get("payment_type") or "otro"
+            payment_map[pt]["total"] += float(p.get("amount") or 0)
             payment_map[pt]["count"] += 1
         by_payment = [
             {"type": k, "total": round(v["total"], 2), "count": v["count"]}
             for k, v in payment_map.items()
         ]
 
-        # Top 8 products by revenue for the period
+        # ── Top products (by sale_date, unchanged) ────────────────────────────
         top_products = []
-        sale_ids = [s["id"] for s in sales]
-        if sale_ids:
+        period_sale_ids = [s["id"] for s in sales_in_period]
+        if period_sale_ids:
             items_res = supabase.table("sale_items") \
                 .select("quantity, price, products(name)") \
-                .in_("sale_id", sale_ids) \
+                .in_("sale_id", period_sale_ids) \
                 .execute()
             prod_map: dict = defaultdict(lambda: {"quantity": 0, "revenue": 0.0})
             for item in (items_res.data or []):
@@ -224,7 +251,6 @@ def get_metrics(request: Request, period: str = "month"):
         converted_count = converted_res.count or 0
         followup_rate = round((converted_count / sent_count * 100) if sent_count > 0 else 0, 1)
 
-        # Skin type distribution is not filtered by period (reflects the full client base)
         skin_map: dict = defaultdict(int)
         for c in all_clients:
             st = c.get("skin_type") or "Sin especificar"
