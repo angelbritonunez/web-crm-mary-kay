@@ -61,7 +61,7 @@ function LoginForm() {
       icon={<Sparkles size={32} color="white" />}
       title="GlowSuite CRM"
       subtitle="Tu negocio, organizado."
-      caption="Para consultoras independientes"
+      caption="Para vendedoras independientes"
     >
       <div className="w-full max-w-sm mx-auto flex flex-col gap-5">
         <div>

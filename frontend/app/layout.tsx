@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 })
 
 export const metadata = {
-  title: "GlowSuite CRM — Para consultoras de belleza",
+  title: "GlowSuite CRM — Para vendedoras independientes",
   description:
     "Elimina el caos de tu consultora. Seguimientos automáticos 2+2+2, cobros pendientes y clientas organizadas — todo en un solo lugar.",
   metadataBase: new URL("https://glowsuitecrm.com"),
@@ -19,7 +19,7 @@ export const metadata = {
     icon: "/favicon.svg",
   },
   openGraph: {
-    title: "GlowSuite CRM — Para consultoras de belleza",
+    title: "GlowSuite CRM — Para vendedoras independientes",
     description:
       "Elimina el caos de tu consultora. Seguimientos automáticos, cobros y clientas — todo en un solo lugar.",
     url: "https://glowsuitecrm.com",

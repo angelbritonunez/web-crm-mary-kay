@@ -69,14 +69,14 @@ export default function LandingPage() {
       <section className="hero">
         <div className="hero-inner">
           <div>
-            <div className="hero-badge">CRM para consultoras de belleza independientes</div>
+            <div className="hero-badge">CRM para vendedoras independientes</div>
             <h1>
               Tu negocio organizado,
               <br />
               <em>en un solo lugar.</em>
             </h1>
             <p className="hero-sub">
-              GlowSuite CRM elimina el caos de manejar tu consultora desde mil maneras distintas. Seguimientos,
+              GlowSuite CRM elimina el caos de manejar tu negocio desde mil maneras distintas. Seguimientos,
               cobros y clientas — todo en un solo lugar, sin complicaciones.
             </p>
             <div className="hero-actions">
@@ -212,7 +212,7 @@ export default function LandingPage() {
             Un solo lugar.
           </h2>
           <p className="section-sub fade-up fade-up-delay-2">
-            Todo lo que necesitas para manejar tu consultora sin caos, sin libretas, y sin perder ni
+            Todo lo que necesitas para manejar tu negocio sin caos, sin libretas, y sin perder ni
             una venta.
           </p>
           <div className="features-grid">
@@ -470,7 +470,7 @@ export default function LandingPage() {
         <div className="footer-logo">
           <img src="/logo.svg" alt="GlowSuite CRM" height="28" />
         </div>
-        <div className="footer-copy">© 2026 GlowSuite CRM · Hecho con ♥ para consultoras de RD</div>
+        <div className="footer-copy">© 2026 GlowSuite CRM · Hecho con ♥ para vendedoras de RD</div>
       </footer>
     </div>
   )
