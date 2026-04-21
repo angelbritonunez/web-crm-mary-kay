@@ -461,7 +461,7 @@ export default function LandingPage() {
           Empieza gratis hoy. Sin complicaciones, sin tarjeta de crédito, sin tiempo que perder.
         </p>
         <a href={PORTAL_URL} className="btn-primary fade-up fade-up-delay-2">
-          Entrar a GlowSuite
+          Entrar a GlowSuite CRM
         </a>
       </section>
 
