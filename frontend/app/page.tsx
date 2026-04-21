@@ -98,23 +98,23 @@ export default function LandingPage() {
                     <div className="browser-dot" style={{ background: "#28C840" }} />
                   </div>
                   <div className="browser-url" id="browser-url-bar">
-                    glowsuite-crm.vercel.app/dashboard
+                    glowsuitecrm.com/dashboard
                   </div>
                 </div>
                 <div className="browser-screen">
-                  <div className="screen-slide active" data-url="glowsuite-crm.vercel.app/dashboard">
+                  <div className="screen-slide active" data-url="glowsuitecrm.com/dashboard">
                     <img src="/screenshots/dashboard.png" alt="Dashboard" />
                   </div>
-                  <div className="screen-slide" data-url="glowsuite-crm.vercel.app/ventas">
+                  <div className="screen-slide" data-url="glowsuitecrm.com/ventas">
                     <img src="/screenshots/ventas.png" alt="Ventas" />
                   </div>
-                  <div className="screen-slide" data-url="glowsuite-crm.vercel.app/metricas">
+                  <div className="screen-slide" data-url="glowsuitecrm.com/metricas">
                     <img src="/screenshots/metricas.png" alt="Métricas" />
                   </div>
-                  <div className="screen-slide" data-url="glowsuite-crm.vercel.app/seguimientos">
+                  <div className="screen-slide" data-url="glowsuitecrm.com/seguimientos">
                     <img src="/screenshots/seguimientos.png" alt="Seguimientos" />
                   </div>
-                  <div className="screen-slide" data-url="glowsuite-crm.vercel.app/clientes">
+                  <div className="screen-slide" data-url="glowsuitecrm.com/clientes">
                     <img src="/screenshots/perfil-clienta.png" alt="Perfil clienta" />
                   </div>
                 </div>
