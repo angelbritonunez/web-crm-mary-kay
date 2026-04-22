@@ -67,6 +67,15 @@ const faqs = [
       },
     ],
   },
+  {
+    category: "Sobre GlowSuite CRM",
+    items: [
+      {
+        q: "¿GlowSuite CRM es oficial de Mary Kay o alguna otra empresa?",
+        a: "No. GlowSuite CRM es un software independiente de gestión de negocio, sin afiliación con Mary Kay, Yanbal, Avon ni ninguna otra empresa de venta directa. Es una herramienta de terceros que puedes usar para organizar tu negocio, igual que usarías Excel o WhatsApp.",
+      },
+    ],
+  },
 ]
 
 export default function AyudaPage() {
