@@ -385,29 +385,29 @@ export default function MetricsPage() {
               <div className="flex justify-between items-baseline mb-2">
                 <span className="text-sm font-semibold text-gray-800">Meta mensual</span>
                 <span className="text-xs text-gray-400">
-                  {fmt(s.revenue)} de {fmt(s.monthly_goal)}
+                  {fmt(s.sales_total ?? 0)} de {fmt(s.monthly_goal)}
                 </span>
               </div>
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
-                    width: `${Math.min(100, Math.round((s.revenue / s.monthly_goal) * 100))}%`,
-                    backgroundColor: s.revenue >= s.monthly_goal ? "#10B981" : "#E75480",
+                    width: `${Math.min(100, Math.round(((s.sales_total ?? 0) / s.monthly_goal) * 100))}%`,
+                    backgroundColor: (s.sales_total ?? 0) >= s.monthly_goal ? "#10B981" : "#E75480",
                   }}
                 />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-400">
-                  {s.revenue >= s.monthly_goal
+                  {(s.sales_total ?? 0) >= s.monthly_goal
                     ? "¡Meta alcanzada!"
-                    : `Faltan ${fmt(s.monthly_goal - s.revenue)}`}
+                    : `Faltan ${fmt(s.monthly_goal - (s.sales_total ?? 0))}`}
                 </span>
                 <span
                   className="text-xs font-bold"
-                  style={{ color: s.revenue >= s.monthly_goal ? "#10B981" : "#E75480" }}
+                  style={{ color: (s.sales_total ?? 0) >= s.monthly_goal ? "#10B981" : "#E75480" }}
                 >
-                  {Math.min(100, Math.round((s.revenue / s.monthly_goal) * 100))}%
+                  {Math.min(100, Math.round(((s.sales_total ?? 0) / s.monthly_goal) * 100))}%
                 </span>
               </div>
             </div>

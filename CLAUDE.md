@@ -44,15 +44,23 @@ No test suite exists yet.
 
 ### Backend Structure
 
-All logic lives in `backend/app/main.py` (single-file FastAPI app). Routes have **no `/api/` prefix**:
-- `GET/POST /clients` — CRUD for clients (skin type, status: prospect/customer/later)
-- `POST /sales` — create sales with items; auto-generates followups; transitions prospect→customer
-- `GET /followups` — list pending followups; categorized as overdue/today/upcoming
-- `POST /followups/{id}/complete` — mark followup as sent
-- `GET /metrics/followups` — followup send rate and conversion tracking
+Modular FastAPI app. `main.py` (47 lines) registers routers only. Routes have **no `/api/` prefix**:
+
+| Router | Routes |
+|--------|--------|
+| `routers/clients.py` | GET/POST/PATCH/DELETE `/clients` |
+| `routers/sales.py` | POST/DELETE `/sales`, GET/POST `/sales/{id}/payments`, GET `/receivables` |
+| `routers/followups.py` | GET `/followups`, POST `/followups/{id}/complete`, PATCH `/followups/{id}` |
+| `routers/metrics.py` | GET `/metrics`, GET `/metrics/followups` |
+| `routers/dashboard.py` | GET `/dashboard` |
+| `routers/products.py` | GET `/products` |
+| `routers/auth.py` | GET `/auth/me` |
+| `routers/admin.py` | GET/POST/PATCH/DELETE `/admin/users`, GET `/admin/dashboard`, POST `/admin/users/{id}/reset-password` |
 
 `backend/app/db.py` — Supabase client using service key (bypasses RLS)
-`backend/app/config.py` — loads env vars
+`backend/app/config.py` — loads `SUPABASE_URL`, `SUPABASE_KEY`, `ALLOWED_ORIGIN`
+`backend/app/services/` — business logic (`followup_service.py`, `sale_service.py`)
+`backend/app/schemas/` — Pydantic models (`clients.py`, `sales.py`)
 
 ### Mixed Data Access Pattern
 
@@ -89,6 +97,10 @@ Three tiers: `free` | `basic` | `pro`. Stored in `profiles.subscription_plan`.
 - **Nueva contraseña:** `app/auth/update-password/page.tsx` — Supabase crea sesión automáticamente desde el token del email; la ruta está en `PUBLIC_ROUTES` para evitar redirect al dashboard
 - **Confirmación de cuenta:** `app/auth/confirmed/page.tsx` — hace `signOut()` para evitar auto-login
 - **Rutas públicas:** definidas en `lib/auth-config.ts` → `PUBLIC_ROUTES`. Cualquier ruta auth nueva debe agregarse ahí o `useAuth` redirige al dashboard
+- **Roles:** `consultora` | `admin` | `operador`. Definidos en `lib/auth-config.ts` → `ALLOWED_ROUTES` y `DEFAULT_REDIRECT`. Guardados en `profiles.role`
+  - `consultora` → redirige a `/dashboard`
+  - `admin` → redirige a `/admin/dashboard`
+  - `operador` → redirige a `/operador/users`
 
 ### Styling Conventions
 
@@ -128,6 +140,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key de glowsuite-dev>
 ```
 SUPABASE_URL=https://bawkkmcoqctbjxaqqgcx.supabase.co
 SUPABASE_KEY=<service_role key de glowsuite-dev>
+ALLOWED_ORIGIN=http://localhost:3000
 ```
 
 **Frontend PROD** (Vercel environment variables):
@@ -141,4 +154,5 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key de glowsuite PROD>
 ```
 SUPABASE_URL=https://nmfszmssahhposvaodml.supabase.co
 SUPABASE_KEY=<service_role key de glowsuite PROD>
+ALLOWED_ORIGIN=https://glowsuitecrm.com
 ```

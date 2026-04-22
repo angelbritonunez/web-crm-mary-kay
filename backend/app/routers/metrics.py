@@ -169,6 +169,9 @@ def get_metrics(request: Request, period: str = "month"):
         revenue = sum(float(p.get("amount") or 0) for p in payments_in_period)
         revenue_prev = sum(float(p.get("amount") or 0) for p in prev_payments_in_period)
 
+        # Sales total = gross sales generated (by sale_date) — used for meta mensual
+        sales_total = sum(float(s.get("total") or 0) for s in sales_in_period)
+
         # Profit = from sales by sale_date (unchanged)
         profit_total = sum(float(s.get("profit") or 0) for s in sales_in_period)
         profit_prev = sum(float(s.get("profit") or 0) for s in prev_sales_in_period)
@@ -272,6 +275,7 @@ def get_metrics(request: Request, period: str = "month"):
                 "new_clients_prev": len(prev_new_clients_res.data or []),
                 "conversion_rate": conv_rate,
                 "monthly_goal": float(monthly_goal) if monthly_goal is not None else None,
+                "sales_total": round(sales_total, 2),
             },
             "revenue_chart": chart_points,
             "by_payment_type": by_payment,
