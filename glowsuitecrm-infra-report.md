@@ -402,4 +402,4 @@ glowsuite/
 
 ---
 
-*Report updated by Claude Code on 2026-04-22 (SEO refactor — Server Components introducidos). Original generated 2026-04-09. Archivo: `glowsuitecrm-infra-report.md`*
+*Report updated by Claude Code on 2026-04-22 (SEO refactor — Server Components introducidos; title/description landing optimizados; SEO validado en producción). Original generated 2026-04-09. Archivo: `glowsuitecrm-infra-report.md`*

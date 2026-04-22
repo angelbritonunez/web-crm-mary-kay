@@ -54,12 +54,16 @@ Las páginas con `"use client"` no pueden exportar `metadata` de Next.js. El pat
 
 **Rutas autenticadas** → `robots: { index: false, follow: false }` en su `page.tsx` server wrapper.
 
+**Guías de longitud para metadata:**
+- `title`: máximo ~55 caracteres (Google trunca a ~60). Ejemplo actual landing: *"GlowSuite CRM — CRM para consultoras de belleza en RD"* (53 chars)
+- `description`: 150–160 caracteres. Ejemplo actual landing: *"Organiza tus clientes, ventas y seguimientos con el sistema 2+2+2. Para consultoras de Mary Kay, Yanbal, Avon y venta directa en RD. Empieza gratis hoy."* (153 chars)
+
 ### Posicionamiento de marca
 
 GlowSuite CRM es un **software independiente** sin afiliación con ninguna empresa de venta directa. Reglas de copy:
 - Mencionar "Mary Kay, Yanbal, Avon" está permitido en contexto **nominative fair use** (descriptivo, no implica afiliación)
 - Disclaimer de no afiliación obligatorio en: footer landing, footer layout autenticado, Términos Art. 00, Política de Privacidad sección "Datos y terceros", Ayuda FAQ
-- Keywords SEO con nombres de marcas solo en `metadata.keywords` (no visibles en UI)
+- Keywords SEO con nombres de marcas en `metadata.keywords` (no visibles en UI) **y** en `metadata.description` de la landing (nominative fair use)
 
 ### Backend Structure
 

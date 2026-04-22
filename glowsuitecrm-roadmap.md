@@ -1,6 +1,6 @@
 # GlowSuite — Roadmap de Producto
 
-**Última actualización:** 2026-04-22 (SEO + legal)
+**Última actualización:** 2026-04-22 (SEO validado en prod + title/description optimizados)
 **Fase actual:** Piloto activo — plan Free disponible al público, Basic/Pro pendientes de precio
 
 ---
@@ -142,7 +142,7 @@ Página pública en `/` con presentación del producto, capturas de pantalla, se
 ---
 
 ### SEO completo ✅
-Metadata estructurada, robots.txt, sitemap.xml, JSON-LD y patrón server wrapper para todas las páginas.
+Metadata estructurada, robots.txt, sitemap.xml, JSON-LD y patrón server wrapper para todas las páginas. Validado en producción el 2026-04-22.
 
 **Implementación:**
 - `app/layout.tsx` — metadata global con title template, OG, Twitter card, canonical, keywords nominativas
@@ -151,8 +151,14 @@ Metadata estructurada, robots.txt, sitemap.xml, JSON-LD y patrón server wrapper
 - `app/LandingEffects.tsx` — efectos DOM (tab slider, fade-up) extraídos como `"use client"`
 - Patrón `page.tsx` (server) + `*Client.tsx` (client) aplicado a todas las rutas con metadata
 
+**Valores actuales landing (`app/page.tsx`):**
+- `title`: "GlowSuite CRM — CRM para consultoras de belleza en RD" (53 chars — optimizado para SERPs)
+- `description`: "Organiza tus clientes, ventas y seguimientos con el sistema 2+2+2. Para consultoras de Mary Kay, Yanbal, Avon y venta directa en RD. Empieza gratis hoy." (153 chars)
+
 **Rutas indexables:** `/`, `/register`, `/terminos`, `/privacidad`, `/ayuda`
 **Rutas bloqueadas:** `/dashboard`, `/clients`, `/sales`, `/followups`, `/metrics`, `/profile`, `/admin`, `/operador`, `/auth/`
+
+**Validación en producción (2026-04-22):** title, description, keywords, canonical, robots, googlebot, OG completo, Twitter card, JSON-LD, robots.txt y sitemap.xml — todos confirmados. Sin hreflang (sitio monolingüe, no crítico).
 
 ---
 
