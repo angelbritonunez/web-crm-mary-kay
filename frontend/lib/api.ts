@@ -2,7 +2,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
-const getAuthHeaders = async (json = false, token?: string, userId?: string): Promise<Record<string, string>> => {
+export const getAuthHeaders = async (json = false, token?: string, userId?: string): Promise<Record<string, string>> => {
   let accessToken = token
   let uid = userId
 

@@ -4,18 +4,10 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { getAdminDashboard } from "@/lib/api"
-import { Users, UserCheck, UserX, ShoppingBag, TrendingUp, UserPlus, Bell } from "lucide-react"
+import { Users, UserCheck, UserX, ShoppingBag, UserPlus, Bell } from "lucide-react"
 import type { AdminDashboardData, AdminDashboardConsultora, SubscriptionPlan } from "@/types"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
-
-function fmt(n: number): string {
-  return new Intl.NumberFormat("es-DO", {
-    style: "currency",
-    currency: "DOP",
-    minimumFractionDigits: 0,
-  }).format(n)
-}
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "Nunca"
@@ -24,13 +16,6 @@ function fmtDate(iso: string | null): string {
     month: "short",
     year: "numeric",
   })
-}
-
-function monthLabel(ym: string): string {
-  const [y, m] = ym.split("-")
-  return new Intl.DateTimeFormat("es-DO", { month: "short", year: "2-digit" }).format(
-    new Date(Number(y), Number(m) - 1, 1)
-  )
 }
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
@@ -63,44 +48,6 @@ function KpiCard({
   )
 }
 
-function MonthlyTrendChart({ data }: { data: { month: string; revenue: number }[] }) {
-  if (!data.length) return null
-
-  const maxRevenue = Math.max(...data.map((d) => d.revenue), 1)
-  const BAR_H = 100
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <div className="border-b border-gray-50 px-5 py-4">
-        <span className="text-sm font-semibold text-gray-800">Tendencia de ingresos</span>
-        <p className="text-xs text-gray-400 mt-0.5">Últimos 6 meses · todas las consultoras</p>
-      </div>
-      <div className="px-5 py-5">
-        <div className="flex items-end gap-3 h-[140px]">
-          {data.map((d) => {
-            const barH = maxRevenue > 0 ? Math.max(4, (d.revenue / maxRevenue) * BAR_H) : 4
-            return (
-              <div key={d.month} className="flex-1 flex flex-col items-center gap-1.5">
-                <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                  {d.revenue > 0 ? fmt(d.revenue) : "—"}
-                </span>
-                <div className="w-full flex items-end" style={{ height: `${BAR_H}px` }}>
-                  <div
-                    className="w-full rounded-t-md bg-[#E75480] transition-all duration-500"
-                    style={{ height: `${barH}px` }}
-                  />
-                </div>
-                <span className="text-[10px] text-gray-400 whitespace-nowrap capitalize">
-                  {monthLabel(d.month)}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 const PLAN_STYLES: Record<SubscriptionPlan, string> = {
   free:  "bg-gray-100 text-gray-500",
@@ -160,7 +107,6 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Plan</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Membresía</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ventas mes</th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ingresos mes</th>
               <th className="text-center px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Clientes</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Último acceso</th>
             </tr>
@@ -168,7 +114,7 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
           <tbody className="divide-y divide-gray-50">
             {consultoras.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-10 text-gray-400 text-sm">
+                <td colSpan={6} className="text-center py-10 text-gray-400 text-sm">
                   No hay consultoras registradas.
                 </td>
               </tr>
@@ -196,9 +142,6 @@ function ConsultorasTable({ consultoras }: { consultoras: AdminDashboardConsulto
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className="text-sm font-semibold text-gray-800">{c.sales_count}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="text-sm font-semibold text-gray-800">{fmt(c.revenue)}</span>
                   </td>
                   <td className="px-4 py-3 text-center text-sm text-gray-600">{c.total_customers}</td>
                   <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
@@ -274,7 +217,7 @@ export default function AdminDashboardPage() {
     )
   }
 
-  const { platform, this_month, monthly_trend, consultoras } = data
+  const { platform, this_month, consultoras } = data
   const expiring = platform.expiring_soon
 
   return (
@@ -346,17 +289,11 @@ export default function AdminDashboardPage() {
         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
           Actividad del mes · todas las consultoras
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <KpiCard
             label="Ventas registradas"
             value={this_month.sales_count}
             icon={<ShoppingBag size={18} />}
-          />
-          <KpiCard
-            label="Ingresos totales"
-            value={fmt(this_month.revenue)}
-            icon={<TrendingUp size={18} />}
-            accent
           />
           <KpiCard
             label="Clientes nuevos"
@@ -380,10 +317,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* ── Bloque 3: Tendencia ── */}
-      <MonthlyTrendChart data={monthly_trend} />
-
-      {/* ── Bloque 4: Performance por consultora ── */}
+      {/* ── Bloque 3: Performance por consultora ── */}
       <ConsultorasTable consultoras={consultoras} />
 
     </div>

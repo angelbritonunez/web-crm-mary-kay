@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
 import { Users, UserCheck, UserX, Plus, RefreshCw, MessageCircle, ToggleLeft, ToggleRight, X } from "lucide-react"
 
+import { getAuthHeaders } from "@/lib/api"
 import type { Role, AdminUser, SubscriptionPlan } from "@/types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -105,12 +106,10 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
 // ── Create user modal ──────────────────────────────────────────────────────────
 
 function CreateUserModal({
-  userId,
   callerRole,
   onClose,
   onCreated,
 }: {
-  userId: string
   callerRole: Role
   onClose: () => void
   onCreated: (email: string, password: string, phone: string, firstName: string) => void
@@ -142,7 +141,7 @@ function CreateUserModal({
     try {
       const res = await fetch(`${API_URL}/admin/users`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": userId },
+        headers: await getAuthHeaders(true),
         body: JSON.stringify({
           email: email.trim(),
           first_name: firstName.trim(),
@@ -332,7 +331,6 @@ function CredentialsModal({ email, password, phone, firstName, onClose }: {
 
 export default function OperadorUsersPage() {
   const router = useRouter()
-  const [userId, setUserId]         = useState<string | null>(null)
   const [callerRole, setCallerRole] = useState<Role>("consultora")
   const [users, setUsers]           = useState<AdminUser[]>([])
   const [loading, setLoading]       = useState(true)
@@ -367,17 +365,16 @@ export default function OperadorUsersPage() {
       const role: Role = profile?.role ?? "consultora"
       if (role !== "admin" && role !== "operador") { router.push("/dashboard"); return }
 
-      setUserId(user.id)
       setCallerRole(role)
-      await fetchUsers(user.id)
+      await fetchUsers()
     }
     init()
   }, [router])
 
-  const fetchUsers = async (uid: string) => {
+  const fetchUsers = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`${API_URL}/admin/users`, { headers: { "x-user-id": uid } })
+      const res = await fetch(`${API_URL}/admin/users`, { headers: await getAuthHeaders() })
       const data = await res.json()
       setUsers(data.data || [])
     } catch {
@@ -388,11 +385,11 @@ export default function OperadorUsersPage() {
   }
 
   const handleChangePlan = async (u: AdminUser, plan: SubscriptionPlan) => {
-    if (!userId || plan === u.subscription_plan) return
+    if (plan === u.subscription_plan) return
     setChangingPlanId(u.id)
     await fetch(`${API_URL}/admin/users/${u.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-user-id": userId },
+      headers: await getAuthHeaders(true),
       body: JSON.stringify({ subscription_plan: plan }),
     })
     setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, subscription_plan: plan } : x))
@@ -400,11 +397,10 @@ export default function OperadorUsersPage() {
   }
 
   const handleToggleActive = async (u: AdminUser) => {
-    if (!userId) return
     setTogglingId(u.id)
     await fetch(`${API_URL}/admin/users/${u.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-user-id": userId },
+      headers: await getAuthHeaders(true),
       body: JSON.stringify({ is_active: !u.is_active }),
     })
     setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, is_active: !u.is_active } : x))
@@ -412,10 +408,10 @@ export default function OperadorUsersPage() {
   }
 
   const handleSaveNotes = async () => {
-    if (!userId || !editingNotes) return
+    if (!editingNotes) return
     await fetch(`${API_URL}/admin/users/${editingNotes.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-user-id": userId },
+      headers: await getAuthHeaders(true),
       body: JSON.stringify({ notes: editingNotes.value }),
     })
     setUsers((prev) => prev.map((u) => u.id === editingNotes.id ? { ...u, notes: editingNotes.value } : u))
@@ -423,20 +419,18 @@ export default function OperadorUsersPage() {
   }
 
   const handleResetPassword = async (uid: string) => {
-    if (!userId) return
     const res = await fetch(`${API_URL}/admin/users/${uid}/reset-password`, {
       method: "POST",
-      headers: { "x-user-id": userId },
+      headers: await getAuthHeaders(),
     })
     const data = await res.json()
     if (data.temp_password) setResetResult({ id: uid, password: data.temp_password })
   }
 
   const handleDeleteUser = async (uid: string) => {
-    if (!userId) return
     await fetch(`${API_URL}/admin/users/${uid}`, {
       method: "DELETE",
-      headers: { "x-user-id": userId },
+      headers: await getAuthHeaders(),
     })
     setUsers((prev) => prev.filter((u) => u.id !== uid))
     setConfirmDelete(null)
@@ -445,7 +439,7 @@ export default function OperadorUsersPage() {
   const handleUserCreated = (email: string, password: string, phone: string, firstName: string) => {
     setShowCreate(false)
     setCredentials({ email, password, phone, firstName })
-    if (userId) fetchUsers(userId)
+    fetchUsers()
   }
 
   const total    = users.length
@@ -499,7 +493,7 @@ export default function OperadorUsersPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => userId && fetchUsers(userId)}
+            onClick={() => fetchUsers()}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50 transition"
           >
             <RefreshCw size={14} />
@@ -747,9 +741,8 @@ export default function OperadorUsersPage() {
       </div>
 
       {/* ── Modals ── */}
-      {showCreate && userId && (
+      {showCreate && (
         <CreateUserModal
-          userId={userId}
           callerRole={callerRole}
           onClose={() => setShowCreate(false)}
           onCreated={handleUserCreated}
