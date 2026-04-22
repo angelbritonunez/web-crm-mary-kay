@@ -1,54 +1,42 @@
-"use client"
-
-import { useEffect } from "react"
+import { Metadata } from "next"
+import LandingEffects from "./LandingEffects"
 
 const PORTAL_URL = "/login"
 const REGISTER_URL = "/register"
 
+export const metadata: Metadata = {
+  title: "GlowSuite CRM — CRM para vendedoras independientes en República Dominicana",
+  description:
+    "Organiza tus clientes, ventas y seguimientos con el sistema 2+2+2. Diseñado para consultoras de belleza en RD. Gratis para empezar.",
+  alternates: { canonical: "https://www.glowsuitecrm.com" },
+}
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "GlowSuite CRM",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "CRM para consultoras de belleza en República Dominicana. Gestión de clientes, ventas, seguimientos 2+2+2 y cobros.",
+  url: "https://www.glowsuitecrm.com",
+  inLanguage: "es",
+  offers: [
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Basic", price: "9", priceCurrency: "USD" },
+    { "@type": "Offer", name: "Pro", price: "19", priceCurrency: "USD" },
+  ],
+}
+
 export default function LandingPage() {
-  useEffect(() => {
-    const slides = document.querySelectorAll<HTMLElement>(".screen-slide")
-    const tabs = document.querySelectorAll<HTMLElement>(".browser-tab")
-    const urlBar = document.getElementById("browser-url-bar")
-
-    function showSlide(idx: number) {
-      slides.forEach((s, i) => s.classList.toggle("active", i === idx))
-      tabs.forEach((t, i) => t.classList.toggle("active", i === idx))
-      if (urlBar && slides[idx]) {
-        urlBar.textContent = (slides[idx] as HTMLElement).dataset.url || ""
-      }
-    }
-
-    tabs.forEach((tab, i) => tab.addEventListener("click", () => showSlide(i)))
-
-    let autoIdx = 0
-    const interval = setInterval(() => {
-      autoIdx = (autoIdx + 1) % slides.length
-      showSlide(autoIdx)
-    }, 3000)
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("visible")
-            observer.unobserve(e.target)
-          }
-        })
-      },
-      { threshold: 0.12 }
-    )
-
-    document.querySelectorAll(".fade-up").forEach((el) => observer.observe(el))
-
-    return () => {
-      clearInterval(interval)
-      observer.disconnect()
-    }
-  }, [])
-
   return (
     <div className="landing-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <LandingEffects />
+
       {/* NAV */}
       <nav>
         <div className="nav-logo">
@@ -76,7 +64,7 @@ export default function LandingPage() {
               <em>en un solo lugar.</em>
             </h1>
             <p className="hero-sub">
-              GlowSuite CRM elimina el caos de manejar tu negocio desde mil maneras distintas. Seguimientos,
+              GlowSuite CRM elimina el caos de manejar tu negocio de venta directa. Seguimientos,
               cobros y clientas — todo en un solo lugar, sin complicaciones.
             </p>
             <div className="hero-actions">
@@ -335,6 +323,9 @@ export default function LandingPage() {
             <br />
             para emprendedoras.
           </h2>
+          <p className="text-gray-500 text-center mt-2 text-sm">
+            Software independiente · No afiliado a ninguna empresa de venta directa
+          </p>
           <p
             className="section-sub fade-up fade-up-delay-2"
             style={{ margin: "14px auto 56px" }}
@@ -447,6 +438,9 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
+          <p className="text-xs text-gray-400 text-center mt-4">
+            Funciona para consultoras de Mary Kay, Yanbal, Avon, Natura, Herbalife y cualquier modelo de venta directa.
+          </p>
         </div>
       </section>
 
@@ -466,16 +460,21 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer>
-        <div className="footer-logo">
-          <img src="/logo.svg" alt="GlowSuite CRM" height="28" />
+      <footer style={{ flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", flexWrap: "wrap", gap: "12px" }}>
+          <div className="footer-logo">
+            <img src="/logo.svg" alt="GlowSuite CRM" height="28" />
+          </div>
+          <div className="footer-links">
+            <a href="/terminos">Términos</a>
+            <a href="/privacidad">Privacidad</a>
+            <a href="/ayuda">Ayuda</a>
+          </div>
+          <div className="footer-copy">© 2026 GlowSuite CRM · Hecho con ♥ para vendedoras de RD</div>
         </div>
-        <div className="footer-links">
-          <a href="/terminos">Términos</a>
-          <a href="/privacidad">Privacidad</a>
-          <a href="/ayuda">Ayuda</a>
-        </div>
-        <div className="footer-copy">© 2026 GlowSuite CRM · Hecho con ♥ para vendedoras de RD</div>
+        <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", textAlign: "center", margin: 0, maxWidth: "640px", alignSelf: "center" }}>
+          GlowSuite CRM es un software independiente. No estamos afiliados, patrocinados ni respaldados por Mary Kay Inc., Yanbal, Avon ni ninguna otra empresa de venta directa.
+        </p>
       </footer>
     </div>
   )

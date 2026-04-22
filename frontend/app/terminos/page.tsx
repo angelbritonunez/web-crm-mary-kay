@@ -1,3 +1,10 @@
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Términos de uso",
+  robots: { index: false },
+}
+
 export default function TerminosPage() {
   return (
     <div className="landing-page">
@@ -23,6 +30,17 @@ export default function TerminosPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
 
             {[
+              {
+                num: "00",
+                title: "Independencia y no afiliación",
+                content: (
+                  <>
+                    <p>GlowSuite CRM es un software de gestión de negocio independiente. No estamos afiliados, asociados, autorizados, patrocinados ni respaldados por Mary Kay Inc., Yanbal International, Avon Products, Natura &amp;Co, Herbalife Ltd. ni por ninguna otra empresa de venta directa o multinivel.</p>
+                    <p style={{ marginTop: "12px" }}>El uso de nombres de marcas de terceros en esta plataforma tiene únicamente fines descriptivos e identificativos (nominative fair use). GlowSuite CRM no reclama ninguna asociación oficial con dichas marcas.</p>
+                    <p style={{ marginTop: "12px" }}>El contrato comercial entre el usuario y su empresa de venta directa es responsabilidad exclusiva del usuario. GlowSuite CRM no asume responsabilidad por el cumplimiento o incumplimiento de dicho contrato.</p>
+                  </>
+                ),
+              },
               {
                 num: "01",
                 title: "Objeto del servicio",

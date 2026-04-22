@@ -1,3 +1,10 @@
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Política de privacidad",
+  robots: { index: false },
+}
+
 export default function PrivacidadPage() {
   return (
     <div className="landing-page">
@@ -23,6 +30,17 @@ export default function PrivacidadPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
 
             {[
+              {
+                icon: "🔒",
+                title: "Datos y terceros",
+                content: (
+                  <>
+                    <p>GlowSuite CRM almacena únicamente los datos que el usuario ingresa voluntariamente en la plataforma (nombres de clientes, montos de ventas, notas de seguimiento, etc.).</p>
+                    <p style={{ marginTop: "12px" }}>No compartimos, vendemos ni transmitimos datos de usuarios a empresas de venta directa (Mary Kay, Yanbal, Avon u otras) ni a ningún tercero no indicado en esta política.</p>
+                    <p style={{ marginTop: "12px" }}>Los datos ingresados en GlowSuite CRM son propiedad del usuario y no tienen ninguna relación contractual con las empresas de venta directa que el usuario represente.</p>
+                  </>
+                ),
+              },
               {
                 icon: "🏢",
                 title: "¿Quién es el responsable?",
