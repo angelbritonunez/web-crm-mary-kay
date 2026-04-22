@@ -38,9 +38,28 @@ No test suite exists yet.
 ### Frontend Structure
 
 - `app/` — Next.js App Router pages (file-based routing)
-- `components/ClientLayout.tsx` — wraps all authenticated pages; handles auth state and redirects
+- `components/ClientLayout.tsx` — wraps all authenticated pages; handles auth state, redirects, and renders footer with disclaimer
 - `lib/api.ts` — all backend API calls (centralizes `x-user-id` header injection)
 - `lib/supabase.js` — Supabase browser client singleton
+
+### SEO — Patrón de metadata
+
+Las páginas con `"use client"` no pueden exportar `metadata` de Next.js. El patrón aplicado en todo el proyecto:
+- `app/foo/page.tsx` — Server Component que exporta `metadata` y renderiza `<FooClient />`
+- `app/foo/FooClient.tsx` — el componente original con `"use client"` (hooks, estado, efectos)
+- `app/LandingEffects.tsx` — efectos DOM de la landing (tab slider, fade-up) extraídos como client component; `app/page.tsx` es servidor
+- `app/robots.ts` — genera `/robots.txt`; desindexar todas las rutas autenticadas
+- `app/sitemap.ts` — genera `/sitemap.xml`; solo las 4 rutas públicas
+- `app/opengraph-image.tsx` — imagen OG 1200×630 generada con `ImageResponse`
+
+**Rutas autenticadas** → `robots: { index: false, follow: false }` en su `page.tsx` server wrapper.
+
+### Posicionamiento de marca
+
+GlowSuite CRM es un **software independiente** sin afiliación con ninguna empresa de venta directa. Reglas de copy:
+- Mencionar "Mary Kay, Yanbal, Avon" está permitido en contexto **nominative fair use** (descriptivo, no implica afiliación)
+- Disclaimer de no afiliación obligatorio en: footer landing, footer layout autenticado, Términos Art. 00, Política de Privacidad sección "Datos y terceros", Ayuda FAQ
+- Keywords SEO con nombres de marcas solo en `metadata.keywords` (no visibles en UI)
 
 ### Backend Structure
 
@@ -156,3 +175,14 @@ SUPABASE_URL=https://nmfszmssahhposvaodml.supabase.co
 SUPABASE_KEY=<service_role key de glowsuite PROD>
 ALLOWED_ORIGIN=https://glowsuitecrm.com
 ```
+
+## Documentación del proyecto
+
+| Archivo | Propósito |
+|---------|-----------|
+| `glowsuitecrm-roadmap.md` | Roadmap de producto — features completadas, en pausa, pendientes, deuda técnica |
+| `glowsuitecrm-infra-report.md` | Análisis de infraestructura — riesgo de migración Vercel/Render → CF/Railway |
+| `glowsuite-test-script.md` | Script de pruebas funcionales — consultora (correr antes de mergear a main) |
+| `glowsuite-test-script-admin.md` | Script de pruebas — flujo admin |
+| `glowsuite-test-script-operador.md` | Script de pruebas — flujo operador |
+| `glowsuite-presentacion-piloto.md` | Presentación del piloto para el equipo |

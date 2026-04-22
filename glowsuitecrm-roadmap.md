@@ -1,6 +1,6 @@
 # GlowSuite — Roadmap de Producto
 
-**Última actualización:** 2026-04-22
+**Última actualización:** 2026-04-22 (SEO + legal)
 **Fase actual:** Piloto activo — plan Free disponible al público, Basic/Pro pendientes de precio
 
 ---
@@ -31,6 +31,8 @@
 | Infraestructura DEV/PROD | ✅ Activo |
 | Autenticación y registro | ✅ Activo |
 | Landing page | ✅ Activo |
+| SEO + metadata + robots/sitemap | ✅ Activo |
+| Posicionamiento legal (no afiliación) | ✅ Activo |
 | Core CRM (clientes, ventas, seguimientos) | ✅ Activo |
 | Métricas y dashboard | ✅ Activo |
 | Ganancias y metas | ✅ Activo |
@@ -134,8 +136,37 @@ Sistema de membresía con tres tiers. Guards en frontend bloquean features segú
 ### Landing page + Branding ✅
 Página pública en `/` con presentación del producto, capturas de pantalla, sección de precios, equipo y CTA de registro.
 
-**Assets:** `public/logo.svg` (bicolor GlowSuite), `public/favicon.svg`, `app/opengraph-image.tsx` (OG 1200×630 para WhatsApp)
-**Convención:** "GlowSuite" — Glow en `#E75480`, Suite en `#1A1A2E`. No mencionar "Mary Kay" en copy público.
+**Assets:** `public/logo.svg` (bicolor GlowSuite), `public/favicon.svg`, `app/opengraph-image.tsx` (OG 1200×630 para WhatsApp/redes)
+**Convención:** "GlowSuite" — Glow en `#E75480`, Suite en `#1A1A2E`.
+
+---
+
+### SEO completo ✅
+Metadata estructurada, robots.txt, sitemap.xml, JSON-LD y patrón server wrapper para todas las páginas.
+
+**Implementación:**
+- `app/layout.tsx` — metadata global con title template, OG, Twitter card, canonical, keywords nominativas
+- `app/robots.ts` / `app/sitemap.ts` — convenciones Next.js para `/robots.txt` y `/sitemap.xml`
+- `app/page.tsx` — server component con metadata específica + JSON-LD `SoftwareApplication`
+- `app/LandingEffects.tsx` — efectos DOM (tab slider, fade-up) extraídos como `"use client"`
+- Patrón `page.tsx` (server) + `*Client.tsx` (client) aplicado a todas las rutas con metadata
+
+**Rutas indexables:** `/`, `/register`, `/terminos`, `/privacidad`, `/ayuda`
+**Rutas bloqueadas:** `/dashboard`, `/clients`, `/sales`, `/followups`, `/metrics`, `/profile`, `/admin`, `/operador`, `/auth/`
+
+---
+
+### Posicionamiento legal — No afiliación ✅
+Disclaimer de software independiente en todos los puntos de contacto legales y UI.
+
+**Implementación:**
+- Footer landing (`app/page.tsx`) — texto centrado debajo del copyright
+- Footer layout autenticado (`components/ClientLayout.tsx`) — mismo disclaimer para páginas de app
+- `app/terminos/page.tsx` — Art. 00 "Independencia y no afiliación" al inicio del documento
+- `app/privacidad/page.tsx` — sección "Datos y terceros" al inicio
+- `app/ayuda/page.tsx` — FAQ "¿GlowSuite CRM es oficial de Mary Kay?" en nueva categoría "Sobre GlowSuite CRM"
+- Copy landing: hero menciona "venta directa"; nominative fair use bajo precios; badge en sección equipo
+- `metadata.keywords` en `layout.tsx` incluye keywords de marca (nominative fair use, no visibles en UI)
 
 ---
 
