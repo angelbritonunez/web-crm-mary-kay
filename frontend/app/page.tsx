@@ -438,11 +438,12 @@ export default function LandingPage() {
               </span>
             </div>
           </div>
-          <p className="text-xs text-gray-400 text-center mt-4">
-            Funciona para consultoras de Mary Kay, Yanbal, Avon, Natura, Herbalife y cualquier modelo de venta directa.
-          </p>
         </div>
       </section>
+
+      <p className="text-xs text-gray-400 text-center mt-2 mb-6">
+        Funciona para consultoras de Mary Kay, Yanbal, Avon, Natura, Herbalife y cualquier modelo de venta directa.
+      </p>
 
       {/* CTA FINAL */}
       <section className="cta-final">
