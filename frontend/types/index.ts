@@ -144,6 +144,7 @@ export type Summary = {
   new_clients_prev: number
   conversion_rate: number
   monthly_goal: number | null
+  sales_total: number
 }
 
 export type ChartPoint = { date: string; revenue: number }

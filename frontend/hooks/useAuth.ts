@@ -30,7 +30,7 @@ export function useAuth() {
 
       let profile: { role: string; subscription_plan: string }
       try {
-        profile = await getMe(session.user.id)
+        profile = await getMe(session.access_token, session.user.id)
       } catch (e: any) {
         // Network error (backend down/cold start): keep the session alive, don't sign out
         if (!e.status) return
@@ -59,7 +59,7 @@ export function useAuth() {
 
       setUser(session.user)
       try {
-        const profile = await getMe(session.user.id)
+        const profile = await getMe(session.access_token, session.user.id)
         const resolvedRole = (profile.role as Role) || "consultora"
         setRole(resolvedRole)
         if (!PUBLIC_ROUTES.includes(pathnameRef.current) && !isAllowed(resolvedRole, pathnameRef.current)) {
