@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://glowsuitecrm.com/terminos",
+    canonical: "https://www.glowsuitecrm.com/terminos",
   },
 }
 

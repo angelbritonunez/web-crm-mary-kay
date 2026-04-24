@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     "Aprende a organizar tu negocio de venta directa: clientes, ventas, cobros y seguimientos. Consejos prácticos para consultoras de Mary Kay, Yanbal, Avon y más en RD.",
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://glowsuitecrm.com/blog" },
+  alternates: { canonical: "https://www.glowsuitecrm.com/blog" },
 }
 
 export default function BlogPage() {
