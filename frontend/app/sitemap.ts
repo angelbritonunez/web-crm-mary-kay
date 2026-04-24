@@ -9,7 +9,7 @@ const blogSlugs = [
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://glowsuitecrm.com"
+  const base = "https://www.glowsuitecrm.com"
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {

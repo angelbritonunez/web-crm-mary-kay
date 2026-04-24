@@ -20,13 +20,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: post.title,
     description: post.description,
     robots: { index: true, follow: true },
-    alternates: { canonical: `https://glowsuitecrm.com/blog/${post.slug}` },
+    alternates: { canonical: `https://www.glowsuitecrm.com/blog/${post.slug}` },
     openGraph: {
       title: post.title,
       description: post.description,
       type: "article",
       publishedTime: post.publishedAt,
-      url: `https://glowsuitecrm.com/blog/${post.slug}`,
+      url: `https://www.glowsuitecrm.com/blog/${post.slug}`,
     },
   }
 }
@@ -48,12 +48,12 @@ export default async function BlogPostPage({ params }: Props) {
     author: {
       "@type": "Organization",
       name: "GlowSuite CRM",
-      url: "https://glowsuitecrm.com",
+      url: "https://www.glowsuitecrm.com",
     },
     publisher: {
       "@type": "Organization",
       name: "GlowSuite CRM",
-      url: "https://glowsuitecrm.com",
+      url: "https://www.glowsuitecrm.com",
     },
   }
 
