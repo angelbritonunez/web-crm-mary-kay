@@ -43,7 +43,7 @@ export function useAuth() {
       const resolvedRole = (profile.role as Role) || "consultora"
       setRole(resolvedRole)
 
-      if (!PUBLIC_ROUTES.includes(pathnameRef.current) && !isAllowed(resolvedRole, pathnameRef.current)) {
+      if (!PUBLIC_ROUTES.some((r) => pathnameRef.current === r || pathnameRef.current.startsWith(r + "/")) && !isAllowed(resolvedRole, pathnameRef.current)) {
         router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
       }
     }
@@ -62,7 +62,7 @@ export function useAuth() {
         const profile = await getMe(session.access_token, session.user.id)
         const resolvedRole = (profile.role as Role) || "consultora"
         setRole(resolvedRole)
-        if (!PUBLIC_ROUTES.includes(pathnameRef.current) && !isAllowed(resolvedRole, pathnameRef.current)) {
+        if (!PUBLIC_ROUTES.some((r) => pathnameRef.current === r || pathnameRef.current.startsWith(r + "/")) && !isAllowed(resolvedRole, pathnameRef.current)) {
           router.push(DEFAULT_REDIRECT[resolvedRole] ?? "/dashboard")
         }
       } catch (e: any) {

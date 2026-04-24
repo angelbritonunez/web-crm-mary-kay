@@ -1,6 +1,6 @@
 import type { Role } from "@/types"
 
-export const PUBLIC_ROUTES = ["/", "/login", "/register", "/auth/confirmed", "/auth/update-password", "/terminos", "/privacidad", "/ayuda"]
+export const PUBLIC_ROUTES = ["/", "/login", "/register", "/auth/confirmed", "/auth/update-password", "/terminos", "/privacidad", "/ayuda", "/blog"]
 
 export const ALLOWED_ROUTES: Record<Role, string[]> = {
   consultora: ["/dashboard", "/clients", "/sales", "/metrics", "/followups", "/profile"],
