@@ -335,7 +335,6 @@ export default function LandingPage() {
           <div className="equipo-grid">
             {[
               { photo: "/screenshots/angel-brito.jpg", name: "Angel Brito", role: "CEO & Fundador" },
-              { photo: "/screenshots/luisa-ramirez.jpg", name: "Luisa Ramírez", role: "Co-fundadora & Embajadora Comercial" },
               { photo: "/screenshots/esmeiry-carmona.PNG", name: "Esmeiry Carmona", role: "Directora de Operaciones" },
             ].map((member) => (
               <div
