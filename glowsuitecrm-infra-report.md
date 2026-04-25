@@ -338,8 +338,17 @@ glowsuite/
     │   ├── supabase.js
     │   └── supabase/
     ├── public/
-    │   ├── logo.svg
-    │   ├── favicon.svg
+    │   ├── logo.svg               (horizontal color — usado por landing/terminos/privacidad)
+    │   ├── favicon.svg            (ícono 48×48 — referenciado en layout.tsx)
+    │   ├── logos/                 (kit oficial — 8 variantes SVG)
+    │   │   ├── glowsuite-crm-horizontal.svg
+    │   │   ├── glowsuite-crm-horizontal-white.svg
+    │   │   ├── glowsuite-crm-horizontal-dark.svg
+    │   │   ├── glowsuite-crm-horizontal-mono.svg
+    │   │   ├── glowsuite-crm-stacked.svg
+    │   │   ├── glowsuite-icon.svg
+    │   │   ├── glowsuite-icon-dark.svg
+    │   │   └── glowsuite-icon-outline.svg
     │   └── screenshots/           (UI screenshots para landing)
     ├── next.config.ts
     ├── package.json
@@ -410,4 +419,4 @@ glowsuite/
 
 ---
 
-*Report updated by Claude Code on 2026-04-24 (canonical URLs estandarizadas a `https://www.glowsuitecrm.com` — corregido en `blog/page.tsx`, `blog/[slug]/page.tsx`, `terminos/page.tsx` y `sitemap.ts`). Previous update: 2026-04-24 (blog SEO — `app/blog/` agregado con `generateStaticParams`). Original generated 2026-04-09. Archivo: `glowsuitecrm-infra-report.md`*
+*Report updated by Claude Code on 2026-04-24 (logo kit oficial integrado — `public/logos/` con 8 variantes; `Navbar.tsx`, `AuthCard.tsx`, blog, ayuda actualizados). Previous update: 2026-04-24 (canonical URLs estandarizadas a `https://www.glowsuitecrm.com`). Original generated 2026-04-09. Archivo: `glowsuitecrm-infra-report.md`*

@@ -132,6 +132,23 @@ Three tiers: `free` | `basic` | `pro`. Stored in `profiles.subscription_plan`.
   - `admin` → redirige a `/admin/dashboard`
   - `operador` → redirige a `/operador/users`
 
+### Logo Kit
+
+El kit oficial vive en `frontend/public/logos/` (8 variantes SVG). Usar siempre el archivo del kit que corresponda al contexto — nunca construir el logo con iconos + texto:
+
+| Archivo | Cuándo usar |
+|---------|-------------|
+| `glowsuite-crm-horizontal.svg` | Nav y footer sobre fondos claros (landing, blog, ayuda, terminos, privacidad) |
+| `glowsuite-crm-horizontal-white.svg` | Sobre fondos de color (panel rosa de AuthCard) |
+| `glowsuite-crm-horizontal-dark.svg` | Versión oscura/monocromática |
+| `glowsuite-crm-horizontal-mono.svg` | Documentos, PDF, impresión |
+| `glowsuite-crm-stacked.svg` | Formato cuadrado (app stores, avatares) |
+| `glowsuite-icon.svg` | Favicon, botones pequeños |
+| `glowsuite-icon-dark.svg` | Ícono sobre fondos muy claros |
+| `glowsuite-icon-outline.svg` | Ícono outline |
+
+`public/logo.svg` y `public/favicon.svg` son los archivos base (horizontal color e ícono, respectivamente) — equivalentes al kit, pero referenciados por las páginas de landing existentes. `Navbar.tsx` y `AuthCard.tsx` usan las rutas explícitas de `/logos/`.
+
 ### Styling Conventions
 
 - Tailwind CSS 4 with a custom pink theme (`#E75480`)

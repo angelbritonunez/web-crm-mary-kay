@@ -1,6 +1,6 @@
 # GlowSuite — Roadmap de Producto
 
-**Última actualización:** 2026-04-24 (canónicas estandarizadas a https://www.glowsuitecrm.com — blog, blog/[slug], terminos, sitemap)
+**Última actualización:** 2026-04-24 (logo kit oficial integrado en todas las páginas)
 **Fase actual:** Piloto activo — plan Free disponible al público, Basic/Pro pendientes de precio
 
 ---
@@ -30,7 +30,7 @@
 |------|--------|
 | Infraestructura DEV/PROD | ✅ Activo |
 | Autenticación y registro | ✅ Activo |
-| Landing page | ✅ Activo |
+| Landing page + Logo Kit | ✅ Activo |
 | SEO + metadata + robots/sitemap | ✅ Activo |
 | Blog SEO (4 artículos + JSON-LD) | ✅ Activo |
 | Posicionamiento legal (no afiliación) | ✅ Activo |
@@ -134,11 +134,17 @@ Sistema de membresía con tres tiers. Guards en frontend bloquean features segú
 
 ---
 
-### Landing page + Branding ✅
+### Landing page + Logo Kit ✅
 Página pública en `/` con presentación del producto, capturas de pantalla, sección de precios, equipo y CTA de registro.
 
-**Assets:** `public/logo.svg` (bicolor GlowSuite), `public/favicon.svg`, `app/opengraph-image.tsx` (OG 1200×630 para WhatsApp/redes)
-**Convención:** "GlowSuite" — Glow en `#E75480`, Suite en `#1A1A2E`.
+**Logo kit oficial:** `public/logos/` — 8 variantes SVG (`horizontal`, `horizontal-white`, `horizontal-dark`, `horizontal-mono`, `stacked`, `icon`, `icon-dark`, `icon-outline`).
+- `public/logo.svg` y `public/favicon.svg` — archivos base (horizontal color e ícono); usados por landing, terminos, privacidad.
+- `Navbar.tsx` — logo horizontal color (`/logos/glowsuite-crm-horizontal.svg`) sobre fondo blanco.
+- `AuthCard.tsx` — logo horizontal white (`/logos/glowsuite-crm-horizontal-white.svg`) sobre panel rosa `#E75480`.
+- Blog y ayuda — nav con logo horizontal color añadida.
+- `app/opengraph-image.tsx` — OG 1200×630 construido inline con JSX (no puede cargar SVG externos).
+
+**Convención:** "GlowSuite" — Glow en `#E75480`, Suite en `#1A1A2E`. Nunca construir el logo con iconos Lucide + texto.
 
 ---
 
