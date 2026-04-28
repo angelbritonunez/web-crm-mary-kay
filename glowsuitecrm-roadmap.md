@@ -1,6 +1,6 @@
 # GlowSuite — Roadmap de Producto
 
-**Última actualización:** 2026-04-24 (logo kit oficial integrado en todas las páginas)
+**Última actualización:** 2026-04-25 (landing tweaks: redes sociales, copy, UI)
 **Fase actual:** Piloto activo — plan Free disponible al público, Basic/Pro pendientes de precio
 
 ---
@@ -136,6 +136,12 @@ Sistema de membresía con tres tiers. Guards en frontend bloquean features segú
 
 ### Landing page + Logo Kit ✅
 Página pública en `/` con presentación del producto, capturas de pantalla, sección de precios, equipo y CTA de registro.
+
+**Tweaks 2026-04-25:**
+- Footer: iconos de Instagram y TikTok (@glowsuitecrm) con hover rosa `#E75480`
+- "Entrar a GlowSuite CRM" → "Acceder" en nav, hero y CTA final
+- Nav: "Cómo funciona" → "¿Cómo funciona?"
+- Sección equipo: grid centrado con `justifyContent: center`
 
 **Logo kit oficial:** `public/logos/` — 8 variantes SVG (`horizontal`, `horizontal-white`, `horizontal-dark`, `horizontal-mono`, `stacked`, `icon`, `icon-dark`, `icon-outline`).
 - `public/logo.svg` y `public/favicon.svg` — archivos base (horizontal color e ícono); usados por landing, terminos, privacidad.
@@ -361,10 +367,18 @@ Re-auditada 2026-04-22. S1/S2/S3 confirmados resueltos o no aplicables al stack 
 
 ---
 
+## Deuda técnica — Frontend
+
+| # | Problema | Severidad | Estado | Detalle |
+|---|---------|-----------|--------|---------|
+| F1 | Dos fuentes de verdad para rutas públicas | Baja | 🔲 Pendiente | `ClientLayout.tsx` mantiene su propia lista de rutas (`publicPages` / `authPrefixes`) separada de `PUBLIC_ROUTES` en `lib/auth-config.ts`. Cada ruta pública nueva debe actualizarse en ambos lugares — causó bug en `/register/pendiente`. Solución: hacer que `ClientLayout` importe y derive su lógica de `PUBLIC_ROUTES`. |
+
+---
+
 ## Email de contacto
 
 `hola@glowsuitecrm.com` → pendiente configurar reenvío a Gmail desde Namecheap Email Forwarding.
 
 ---
 
-*Documento generado por Claude Code — refleja el estado del branch `main` al 2026-04-24.*
+*Documento generado por Claude Code — refleja el estado del branch `main` al 2026-04-28.*
