@@ -121,20 +121,31 @@ export default function TerminosPage() {
               },
               {
                 num: "08",
+                title: "Suscripciones y reembolsos",
+                content: (
+                  <>
+                    <p>GlowSuite CRM ofrece un período de prueba gratuito de 30 días antes del primer cobro. Durante ese período puedes cancelar en cualquier momento sin costo alguno.</p>
+                    <p style={{ marginTop: "12px" }}>Una vez iniciado el primer cobro de un plan de pago (Basic o Pro), ofrecemos reembolso completo si lo solicitas dentro de los 7 días calendario siguientes a esa primera transacción. Pasado ese plazo, los pagos realizados no son reembolsables. La cancelación de una suscripción activa detiene futuros cobros pero no genera reembolso proporcional del período en curso.</p>
+                    <p style={{ marginTop: "12px" }}>Para solicitar un reembolso escríbenos a <strong>hola@glowsuitecrm.com</strong>.</p>
+                  </>
+                ),
+              },
+              {
+                num: "09",
                 title: "Limitación de responsabilidad",
                 content: (
                   <p>GlowSuite CRM se provee "tal cual" y "según disponibilidad". No garantizamos disponibilidad ininterrumpida ni ausencia de errores. En ningún caso seremos responsables por daños indirectos, pérdida de ganancias o pérdida de datos derivados del uso o la imposibilidad de uso de la plataforma, en la medida permitida por la ley dominicana.</p>
                 ),
               },
               {
-                num: "09",
+                num: "10",
                 title: "Ley aplicable y jurisdicción",
                 content: (
                   <p>Estos términos se rigen por las leyes de la República Dominicana, incluyendo la <strong>Ley 126-02</strong> sobre Comercio Electrónico, Documentos y Firmas Digitales y la <strong>Ley 53-07</strong> sobre Crímenes y Delitos de Alta Tecnología. Para cualquier controversia, las partes se someten a la jurisdicción de los tribunales competentes de Santo Domingo, República Dominicana.</p>
                 ),
               },
               {
-                num: "10",
+                num: "11",
                 title: "Contacto",
                 content: (
                   <p>Para consultas sobre estos términos: <strong>hola@glowsuitecrm.com</strong></p>
