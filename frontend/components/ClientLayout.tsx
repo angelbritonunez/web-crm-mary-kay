@@ -9,8 +9,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
 
   const publicPages = ["/", "/terminos", "/privacidad", "/ayuda"]
-  const authPages = ["/login", "/register", "/auth/confirmed", "/auth/update-password"]
-  if (publicPages.includes(pathname) || authPages.includes(pathname)) {
+  const authPrefixes = ["/login", "/register", "/auth/"]
+  if (publicPages.includes(pathname) || authPrefixes.some((p) => pathname.startsWith(p))) {
     return <>{children}</>
   }
 
