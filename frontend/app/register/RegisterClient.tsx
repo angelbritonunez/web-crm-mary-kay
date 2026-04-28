@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [apellido, setApellido] = useState("")
   const [email, setEmail] = useState("")
   const [telefono, setTelefono] = useState("")
+  const [empresa, setEmpresa] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -27,10 +28,23 @@ export default function RegisterPage() {
   const passwordMismatch =
     password.length > 0 && confirmPassword.length > 0 && password !== confirmPassword
 
+  const handleTelefonoChange = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 10)
+    let formatted = digits
+    if (digits.length > 6) {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+    } else if (digits.length > 3) {
+      formatted = `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+    } else if (digits.length > 0) {
+      formatted = `(${digits}`
+    }
+    setTelefono(formatted)
+  }
+
   const handleRegister = async () => {
     setError("")
 
-    if (!nombre || !apellido || !email || !telefono || !password || !confirmPassword) {
+    if (!nombre || !apellido || !email || !telefono || !empresa || !password || !confirmPassword) {
       setError("Completa todos los campos")
       return
     }
@@ -51,7 +65,7 @@ export default function RegisterPage() {
       email,
       password,
       options: {
-        data: { first_name: nombre, last_name: apellido, phone: telefono },
+        data: { first_name: nombre, last_name: apellido, full_name: `${nombre} ${apellido}`, phone: telefono, company: empresa },
         emailRedirectTo: `${window.location.origin}/auth/confirmed`,
       },
     })
@@ -99,7 +113,22 @@ export default function RegisterPage() {
             </div>
 
             <AuthInput label="Correo electrónico" type="email" placeholder="ejemplo@correo.com" value={email} onChange={setEmail} />
-            <AuthInput label="Teléfono" type="tel" placeholder="809-000-0000" value={telefono} onChange={setTelefono} />
+            <AuthInput label="Teléfono" type="tel" placeholder="(809) 555-1234" value={telefono} onChange={handleTelefonoChange} />
+
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-gray-600 font-medium">Empresa</label>
+              <select
+                value={empresa}
+                onChange={(e) => setEmpresa(e.target.value)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#E75480] text-sm text-gray-700"
+              >
+                <option value="">Selecciona tu empresa</option>
+                <option value="Mary Kay">Mary Kay</option>
+                <option value="Avon">Avon</option>
+                <option value="Amway">Amway</option>
+                <option value="Yanbal">Yanbal</option>
+              </select>
+            </div>
 
             <AuthInput
               label="Contraseña"
