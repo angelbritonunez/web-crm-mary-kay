@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase"
-import { Eye, EyeOff, Sparkles } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import AuthCard from "@/components/ui/AuthCard"
 import AuthInput from "@/components/ui/AuthInput"
 import AuthButton from "@/components/ui/AuthButton"
@@ -22,7 +22,6 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
 
   const passwordMismatch =
@@ -77,8 +76,7 @@ export default function RegisterPage() {
       return
     }
 
-    setSuccess(true)
-    setTimeout(() => router.push("/login"), 4000)
+    router.push("/register/pendiente")
   }
 
   return (
@@ -92,89 +90,72 @@ export default function RegisterPage() {
           <p className="text-sm text-gray-500 mt-1 mb-6">Completa tus datos para empezar</p>
         </div>
 
-        {success ? (
-          <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-[#FFF0F4] flex items-center justify-center">
-              <Sparkles size={24} className="text-[#E75480]" />
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">¡Cuenta creada!</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Revisa tu correo para confirmar tu cuenta.<br />
-                Te redirigimos al inicio de sesión…
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <AuthInput label="Nombre" type="text" placeholder="Ana" value={nombre} onChange={setNombre} />
-              <AuthInput label="Apellido" type="text" placeholder="García" value={apellido} onChange={setApellido} />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <AuthInput label="Nombre" type="text" placeholder="Ana" value={nombre} onChange={setNombre} />
+          <AuthInput label="Apellido" type="text" placeholder="García" value={apellido} onChange={setApellido} />
+        </div>
 
-            <AuthInput label="Correo electrónico" type="email" placeholder="ejemplo@correo.com" value={email} onChange={setEmail} />
-            <AuthInput label="Teléfono" type="tel" placeholder="(809) 555-1234" value={telefono} onChange={handleTelefonoChange} />
+        <AuthInput label="Correo electrónico" type="email" placeholder="ejemplo@correo.com" value={email} onChange={setEmail} />
+        <AuthInput label="Teléfono" type="tel" placeholder="(809) 555-1234" value={telefono} onChange={handleTelefonoChange} />
 
-            <div className="flex flex-col gap-1">
-              <label className="text-sm text-gray-600 font-medium">Empresa</label>
-              <select
-                value={empresa}
-                onChange={(e) => setEmpresa(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#E75480] text-sm text-gray-700"
-              >
-                <option value="">Selecciona tu empresa</option>
-                <option value="Mary Kay">Mary Kay</option>
-                <option value="Avon">Avon</option>
-                <option value="Amway">Amway</option>
-                <option value="Yanbal">Yanbal</option>
-              </select>
-            </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-gray-600 font-medium">Empresa</label>
+          <select
+            value={empresa}
+            onChange={(e) => setEmpresa(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#E75480] text-sm text-gray-700"
+          >
+            <option value="">Selecciona tu empresa</option>
+            <option value="Mary Kay">Mary Kay</option>
+            <option value="Avon">Avon</option>
+            <option value="Amway">Amway</option>
+            <option value="Yanbal">Yanbal</option>
+          </select>
+        </div>
 
-            <AuthInput
-              label="Contraseña"
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={password}
-              onChange={setPassword}
-              rightIcon={
-                <span onClick={() => setShowPassword(!showPassword)} className="cursor-pointer">
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </span>
-              }
-            />
+        <AuthInput
+          label="Contraseña"
+          type={showPassword ? "text" : "password"}
+          placeholder="••••••••"
+          value={password}
+          onChange={setPassword}
+          rightIcon={
+            <span onClick={() => setShowPassword(!showPassword)} className="cursor-pointer">
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          }
+        />
 
-            <AuthInput
-              label="Confirmar contraseña"
-              type={showConfirmPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-              error={passwordMismatch ? "Las contraseñas no coinciden" : undefined}
-              rightIcon={
-                <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="cursor-pointer">
-                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </span>
-              }
-            />
+        <AuthInput
+          label="Confirmar contraseña"
+          type={showConfirmPassword ? "text" : "password"}
+          placeholder="••••••••"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+          error={passwordMismatch ? "Las contraseñas no coinciden" : undefined}
+          rightIcon={
+            <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="cursor-pointer">
+              {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </span>
+          }
+        />
 
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
-            <AuthButton onClick={handleRegister} loading={loading}>
-              Crear cuenta
-            </AuthButton>
+        <AuthButton onClick={handleRegister} loading={loading}>
+          Crear cuenta
+        </AuthButton>
 
-            <p className="text-sm text-gray-500 text-center">
-              ¿Ya tienes cuenta?{" "}
-              <span
-                className="cursor-pointer hover:underline font-medium"
-                style={{ color: "#E75480" }}
-                onClick={() => router.push("/login")}
-              >
-                Iniciar sesión →
-              </span>
-            </p>
-          </>
-        )}
+        <p className="text-sm text-gray-500 text-center">
+          ¿Ya tienes cuenta?{" "}
+          <span
+            className="cursor-pointer hover:underline font-medium"
+            style={{ color: "#E75480" }}
+            onClick={() => router.push("/login")}
+          >
+            Iniciar sesión →
+          </span>
+        </p>
       </div>
     </AuthCard>
   )

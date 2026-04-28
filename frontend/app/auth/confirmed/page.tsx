@@ -12,9 +12,11 @@ export default function ConfirmedPage() {
 
   useEffect(() => {
     // Supabase auto-crea una sesión desde el hash fragment del email de verificación.
-    // La cerramos aquí para que la consultora ingrese sus credenciales explícitamente.
-    supabase.auth.signOut()
-  }, [supabase])
+    // La cerramos y redirigimos al login para que la consultora ingrese sus credenciales.
+    supabase.auth.signOut().then(() => {
+      router.push("/login")
+    })
+  }, [supabase, router])
 
   return (
     <AuthCard
@@ -28,16 +30,9 @@ export default function ConfirmedPage() {
         <div>
           <h2 className="text-xl font-semibold text-gray-800">¡Correo confirmado!</h2>
           <p className="text-sm text-gray-500 mt-2">
-            Tu cuenta está activa. Inicia sesión con tu correo y contraseña para entrar a GlowSuite CRM.
+            Tu cuenta está activa. Redirigiendo al inicio de sesión…
           </p>
         </div>
-        <button
-          onClick={() => router.push("/login")}
-          className="w-full py-3 rounded-full font-semibold text-white text-sm"
-          style={{ background: "#E75480" }}
-        >
-          Iniciar sesión →
-        </button>
       </div>
     </AuthCard>
   )
